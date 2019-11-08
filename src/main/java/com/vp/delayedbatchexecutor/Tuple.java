@@ -1,16 +1,20 @@
 package com.vp.delayedbatchexecutor;
 
-class Tuple {
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-    private boolean resultCommitted;
-    private Object result;
+class Tuple<T> implements Future<T> {
+
+    private boolean done;
+    private T result;
     private final Object[] argsAsArray;
-
 
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
-        this.resultCommitted = false;
+        this.done = false;
         this.argsAsArray = argsAsArray;
     }
 
@@ -19,25 +23,23 @@ class Tuple {
     }
 
 
-    Object getResult() {
+    @Override
+    public T get() throws InterruptedException, ExecutionException {
+        synchronized (this) {
+            if (!done) {
+                this.wait();
+            }
+        }
         return result;
+    }
+
+    @Override
+    public boolean isDone() {
+        return done;
     }
 
     Object getArgumentByPosition(int argPosition) {
         return argsAsArray[argPosition];
-    }
-
-
-    void waitIfResultHasNotCommitted() {
-        synchronized (this) {
-            if (!resultCommitted) {
-                try {
-                    this.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Interrupted waiting.  it shouldn't happen ever", e);
-                }
-            }
-        }
     }
 
     void continueIfIsWaiting() {
@@ -46,13 +48,29 @@ class Tuple {
         }
     }
 
-    void setResult(Object result) {
+    void setResult(T result) {
         this.result = result;
     }
 
     void commitResult() {
         synchronized (this) {
-            this.resultCommitted = true;
+            this.done = true;
         }
+    }
+
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return false;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return false;
+    }
+
+    @Override
+    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        throw new UnsupportedOperationException();
     }
 }

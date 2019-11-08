@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TupleListArgs {
+
     private final List<List<Object>> listOfListsOfArgs;
 
     TupleListArgs(List<Tuple> paramList) {
@@ -21,7 +22,6 @@ public class TupleListArgs {
         return (List<T>) listOfListsOfArgs.get(argNumber);
     }
 
-
     private List<List<Object>> buildEmptyListOfListsOfArgs(int argsCounter) {
         List<List<Object>> listOfListsOfArgs = new ArrayList<>();
 
@@ -30,10 +30,5 @@ public class TupleListArgs {
         }
         return listOfListsOfArgs;
     }
-
-
-
-
-
 
 }

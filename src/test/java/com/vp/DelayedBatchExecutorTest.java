@@ -4,6 +4,8 @@ package com.vp;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import com.vp.delayedbatchexecutor.*;
 import org.junit.Assert;
@@ -20,7 +22,7 @@ public class DelayedBatchExecutorTest {
     private static final int DO_QUERY_SIMULATION_MIN_TIME = 10;
     private static final int DO_QUERY_SIMULATION_MAX_TIME = 2000;
 
-    private static final int SECONDS_SIMULATION = 2;
+    private static final int SECONDS_SIMULATION = 1;
     private static final int ONE_SECOND_MILLISECONDS = 1000;
 
     private static final int BYTES_IN_MEGABYTES = 1020*1024;
@@ -70,9 +72,26 @@ public class DelayedBatchExecutorTest {
             Thread thread = new Thread(() -> {
                 String arg1 = threadName + "_ARG1";
                 String arg2 = threadName + "_ARG2";
-                String result = delayedBulkExecutor.execute(arg1, arg2);
                 String expectedResult = simulateQueryResultForArguments(arg1, arg2);
+
+                // FIRST TIME SYNC
+                String result = delayedBulkExecutor.execute(arg1, arg2);
                 Assert.assertEquals(result, expectedResult);
+
+                // SECOND TIME SYNC
+                result = delayedBulkExecutor.execute(arg1, arg2);
+                Assert.assertEquals(result, expectedResult);
+
+                // ASYNC
+                Future<String>  futureResult = delayedBulkExecutor.executeAsFuture(arg1, arg2);
+                // do something
+                randomPause(100, 500);
+                try {
+                    Assert.assertEquals(futureResult.get(), expectedResult);
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException("Future problem. it shouldn't happen ever", e);
+                }
+
             });
             thread.setName(threadName);
             threads.add(thread);
