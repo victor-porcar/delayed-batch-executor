@@ -1,0 +1,4 @@
+DelayedBatchExecutor
+Copyright 2019 Victor Porcar
+
+This product includes "project reactor" software (https://projectreactor.io/).

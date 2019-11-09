@@ -20,7 +20,7 @@ public class DelayedBatchExecutorTest {
     private final Logger log = LoggerFactory.getLogger(getClass());
 
     private static final int DO_QUERY_SIMULATION_MIN_TIME = 10;
-    private static final int DO_QUERY_SIMULATION_MAX_TIME = 2000;
+    private static final int DO_QUERY_SIMULATION_MAX_TIME = 100;
 
     private static final int SECONDS_SIMULATION = 1;
     private static final int ONE_SECOND_MILLISECONDS = 1000;
