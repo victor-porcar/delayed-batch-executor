@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.vp</groupId>
     <artifactId>delayed-batch-executor</artifactId>
     <version>1.1-SNAPSHOT</version>
@@ -11,9 +10,15 @@
     <description>A component to decrease the number of required queries by batching them in Java multi-threaded applications</description>
     <url>https://github.com/victormpcmun/delayed-batch-executor</url>
 
+    <organization>
+        <url>https://github.com/victormpcmun</url>
+        <name>Victor Porcar</name>
+    </organization>
+    <inceptionYear>2019</inceptionYear>
+
     <licenses>
         <license>
-            <name>The Apache Software License, Version 2.0</name>
+            <name>The Apache License, Version 2.0</name>
             <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
@@ -27,12 +32,14 @@
         </developer>
     </developers>
 
+
     <scm>
         <connection>scm:git:git://github.com/victormpcmun/delayed-batch-executor.git</connection>
-        <developerConnection>scm:git:https://github.com/victormpcmun/delayed-batch-executor.git</developerConnection>
-        <url>http://github.com/victormpcmun/delayed-batch-executor/tree/master</url>
+        <developerConnection>scm:git:git@github.com:victormpcmun/delayed-batch-executor.git</developerConnection>
+        <url>https://github.com/victormpcmun/delayed-batch-executor</url>
         <tag>HEAD</tag>
     </scm>
+
 
     <distributionManagement>
         <snapshotRepository>
@@ -45,61 +52,118 @@
         </repository>
     </distributionManagement>
 
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/victormpcmun/delayed-batch-executor/issues</url>
+    </issueManagement>
+
     <properties>
-        <reactor-core.version>3.2.11.RELEASE</reactor-core.version>
+        <version.junit>4.12</version.junit>
+        <version.logback>1.1.7</version.logback>
+        <version.reactor-core>3.2.11.RELEASE</version.reactor-core>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <version.velocity>1.7</version.velocity>
+
+
+
+
+
+        <version.maven-compiler-plugin>3.6.0</version.maven-compiler-plugin>
+        <version.maven-surefire-plugin>2.19.1</version.maven-surefire-plugin>
+        <version.maven-resources-plugin>3.0.1</version.maven-resources-plugin>
+        <version.maven-source-plugin>3.0.1</version.maven-source-plugin>
+        <version.maven-javadoc-plugin>2.10.4</version.maven-javadoc-plugin>
+        <version.nexus-staging-maven-plugin>1.6.7</version.nexus-staging-maven-plugin>
+        <version.maven-release-plugin>2.5.3</version.maven-release-plugin>
+        <version.maven-scm-provider-gitexe>1.9.5</version.maven-scm-provider-gitexe>
+        <version.jacoco-maven-plugin>0.7.7.201606060606</version.jacoco-maven-plugin>
+        <version.coveralls-maven-plugin>4.3.0</version.coveralls-maven-plugin>
+        <version.maven-site-plugin>3.5.1</version.maven-site-plugin>
+        <version.reflow-velocity-tools>1.1.1</version.reflow-velocity-tools>
+        <version.maven-pmd-plugin>3.0.1</version.maven-pmd-plugin>
+        <version.findbugs-maven-plugin>3.0.1</version.findbugs-maven-plugin>
+        <version.maven-changelog-plugin>2.3</version.maven-changelog-plugin>
+        <version.taglist-maven-plugin>2.4</version.taglist-maven-plugin>
+        <version.maven-project-info-reports-plugin>2.8</version.maven-project-info-reports-plugin>
+        <version.maven-checkstyle-plugin>2.10</version.maven-checkstyle-plugin>
+        <version.cobertura-maven-plugin>2.6</version.cobertura-maven-plugin>
+        <version.maven-surefire-report-plugin>2.18.1</version.maven-surefire-report-plugin>
+        <version.maven-jxr-plugin>2.5</version.maven-jxr-plugin>
+        <version.maven-gpg-plugin>1.7</version.maven-gpg-plugin>
+        <version.maven-deploy-plugin>2.8.2</version.maven-deploy-plugin>
+
+
+
+
+
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-core</artifactId>
-            <version>${reactor-core.version}</version>
+            <version>${version.reactor-core}</version>
         </dependency>
 
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${version.junit}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>${version.logback}</version>
         </dependency>
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>NOTICE*</include>
+                    <include>LICENSE*</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>${version.maven-compiler-plugin}</version>
                 <configuration>
+                    <encoding>UTF-8</encoding>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.1.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.maven-surefire-plugin}</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${version.maven-resources-plugin}</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>${version.maven-source-plugin}</version>
                 <executions>
                     <execution>
                         <id>attach-sources</id>
@@ -110,9 +174,38 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${version.maven-javadoc-plugin}</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadoc</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${version.maven-deploy-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>default-deploy</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
+                <version>${version.nexus-staging-maven-plugin}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
@@ -120,6 +213,154 @@
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${version.maven-release-plugin}</version>
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <pushChanges>false</pushChanges>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.apache.maven.scm</groupId>
+                        <artifactId>maven-scm-provider-gitexe</artifactId>
+                        <version>${version.maven-scm-provider-gitexe}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+                <version>${version.coveralls-maven-plugin}</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${version.maven-site-plugin}</version>
+                <configuration>
+                    <reportPlugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <version>${version.maven-javadoc-plugin}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-jxr-plugin</artifactId>
+                            <version>${version.maven-jxr-plugin}</version>
+                            <configuration>
+                                <aggregate>true</aggregate>
+                            </configuration>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-report-plugin</artifactId>
+                            <version>${version.maven-surefire-report-plugin}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>cobertura-maven-plugin</artifactId>
+                            <version>${version.cobertura-maven-plugin}</version>
+                            <configuration>
+                                <formats>
+                                    <format>xml</format>
+                                    <format>html</format>
+                                </formats>
+                            </configuration>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-checkstyle-plugin</artifactId>
+                            <version>${version.maven-checkstyle-plugin}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-project-info-reports-plugin</artifactId>
+                            <version>${version.maven-project-info-reports-plugin}</version>
+                            <configuration>
+                                <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+                            </configuration>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>taglist-maven-plugin</artifactId>
+                            <version>${version.taglist-maven-plugin}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-changelog-plugin</artifactId>
+                            <version>${version.maven-changelog-plugin}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>findbugs-maven-plugin</artifactId>
+                            <version>${version.findbugs-maven-plugin}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-pmd-plugin</artifactId>
+                            <version>${version.maven-pmd-plugin}</version>
+                        </plugin>
+                    </reportPlugins>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>lt.velykis.maven.skins</groupId>
+                        <artifactId>reflow-velocity-tools</artifactId>
+                        <version>${version.reflow-velocity-tools}</version>
+                    </dependency>
+                    <!-- Reflow skin requires Velocity >= 1.7 -->
+                    <dependency>
+                        <groupId>org.apache.velocity</groupId>
+                        <artifactId>velocity</artifactId>
+                        <version>${version.velocity}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- GPG Signature on release -->
+        <profile>
+            <id>release-sign-artifacts</id>
+            <activation>
+                <property>
+                    <name>performRelease</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
