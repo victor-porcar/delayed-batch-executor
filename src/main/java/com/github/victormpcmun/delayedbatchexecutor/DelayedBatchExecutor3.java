@@ -1,4 +1,4 @@
-package com.vp.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 
 import java.time.Duration;
@@ -7,15 +7,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- * A subclass of a DelayedBatchExecutor for four arguments.
+ * A subclass of a DelayedBatchExecutor for two arguments.
  * @author Victor Porcar
  *
  */
-public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
+public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
 
-    private final CallBack5 userFunctionToBeInvoked;
+    private final CallBack3 userFunctionToBeInvoked;
 
-    DelayedBatchExecutor5(Duration windowTime, int size, CallBack5 userFunctionToBeInvoked) {
+    DelayedBatchExecutor3(Duration windowTime, int size, CallBack3 userFunctionToBeInvoked) {
         super(windowTime, size);
         this.userFunctionToBeInvoked=userFunctionToBeInvoked;
     }
@@ -29,22 +29,21 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      *
      * @param  arg1 an instance of the first  argument defined for the DelayedBatchExecutor
      * @param  arg2 an instance of the second argument defined for the DelayedBatchExecutor
-     * @param  arg3 an instance of the third argument defined for the DelayedBatchExecutor
-     * @param  arg4 an instance of the fourth argument defined for the DelayedBatchExecutor
      * @return  an instance of type Z
      *
      * @author Victor Porcar
      *
      */
 
-    public Z execute(A arg1, B arg2, C arg3, D arg4) {
-        Future<Z> future = executeAsFuture(arg1,arg2,arg3,arg4);
+    public Z execute(A arg1, B arg2) {
+        Future<Z> future = executeAsFuture(arg1,arg2);
         try {
             return future.get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException("Interrupted waiting.  it shouldn't happen ever", e);
         }
     }
+
 
     /**
      * returns a Future of the result of execution of the callback method of the DelayedBatchExecutor for the given parameters.
@@ -54,26 +53,19 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      *
      * @param  arg1 an instance of the first  argument defined for the DelayedBatchExecutor
      * @param  arg2 an instance of the second argument defined for the DelayedBatchExecutor
-     * @param  arg3 an instance of the third argument defined for the DelayedBatchExecutor
-     * @param  arg4 an instance of the fourth argument defined for the DelayedBatchExecutor
      * @return  a Future of of type Z
      *
      * @author Victor Porcar
      *
      */
-    public Future<Z> executeAsFuture(A arg1, B arg2, C arg3, D arg4) {
-        Tuple<Z> tuple = new Tuple<>(arg1,arg2,arg3,arg4);
+    public Future<Z> executeAsFuture(A arg1, B arg2) {
+        Tuple<Z> tuple = new Tuple<>(arg1,arg2);
         executeWithArgs(tuple);
         return tuple;
     }
 
     @Override
     protected  List<Object> getResultFromTupleList(TupleListArgs tupleListArgs) {
-        return userFunctionToBeInvoked.apply(
-                tupleListArgs.getArgsList(0),
-                tupleListArgs.getArgsList(1),
-                tupleListArgs.getArgsList(2),
-                tupleListArgs.getArgsList(3)
-        );
+        return userFunctionToBeInvoked.apply(tupleListArgs.getArgsList(0), tupleListArgs.getArgsList(1));
     }
 }

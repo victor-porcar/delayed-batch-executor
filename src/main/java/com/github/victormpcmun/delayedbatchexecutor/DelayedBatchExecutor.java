@@ -1,4 +1,4 @@
-package com.vp.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;

@@ -151,7 +151,7 @@ And that's it.
 
 Once running, the concurrent threads executing the controller logic invoke the method `getProductById(Integer id)` at some point, and this method will return the correspoding Product, they won't know that they may actually have been stopped and resumed by the  `DelayedBatchExecutor`
 
-See full example in `com.vp.sample.ProductDAO`
+See full example in `ProductDAO`
 
 #### Beyond data repositories
 Although this introduction pertains to data repositories, DelayedBatchExecutor could be used as well in other contexts, for instance in requests to REST microservices. Again, it is much more *expensive* to launch n GET requests with one parameter that 1 GET with n parameters.

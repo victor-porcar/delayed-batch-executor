@@ -1,4 +1,4 @@
-package com.vp.sample;
+package com.github.victormpcmun.delayedbatchexecutor.sample;
 
 public class Product {
 

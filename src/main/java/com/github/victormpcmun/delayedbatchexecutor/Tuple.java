@@ -1,4 +1,4 @@
-package com.vp.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;

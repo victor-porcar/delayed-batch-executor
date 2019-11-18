@@ -1,4 +1,4 @@
-package com.vp;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 
 import java.time.Duration;
@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import com.vp.delayedbatchexecutor.*;
 import org.junit.Assert;
 import org.junit.Test;
 

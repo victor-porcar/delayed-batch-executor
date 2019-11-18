@@ -1,4 +1,4 @@
-package com.vp.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 import java.util.ArrayList;
 import java.util.List;

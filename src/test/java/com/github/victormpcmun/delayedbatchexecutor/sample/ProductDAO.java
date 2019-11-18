@@ -1,4 +1,4 @@
-package com.vp.sample;
+package com.github.victormpcmun.delayedbatchexecutor.sample;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
-import com.vp.delayedbatchexecutor.DelayedBatchExecutor;
-import com.vp.delayedbatchexecutor.DelayedBatchExecutor2;
+import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor;
+import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor2;
 
 
 // make this class singleton properly
