@@ -1,4 +1,4 @@
-package com.github.victormpcmun.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor.tuple;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,7 @@ public class TupleListArgs {
 
     private final List<List<Object>> listOfListsOfArgs;
 
-    TupleListArgs(List<Tuple> paramList) {
+    public TupleListArgs(List<Tuple> paramList) {
         int argsCounter=paramList.get(0).getArgsSize();
         listOfListsOfArgs = buildEmptyListOfListsOfArgs(argsCounter);
         for (Tuple tuple:paramList) {
@@ -18,7 +18,7 @@ public class TupleListArgs {
         }
     }
 
-     <T> List<T> getArgsList(int argNumber) {
+    public <T> List<T> getArgsList(int argNumber) {
         return (List<T>) listOfListsOfArgs.get(argNumber);
     }
 

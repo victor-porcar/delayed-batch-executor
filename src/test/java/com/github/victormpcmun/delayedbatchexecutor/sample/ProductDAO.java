@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 
 import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor;
 import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor2;
+import reactor.core.publisher.Mono;
 
 
 // make this class singleton properly
@@ -30,6 +31,13 @@ public class ProductDAO {
     public Future< Product> getProductByIdAsync(Integer productId) {
         return  delayedBatchExecutorProductById.executeAsync(productId);
     }
+
+
+    public Mono< Product> getProductByIdMono(Integer productId) {
+        return  delayedBatchExecutorProductById.executeAsMono(productId);
+    }
+
+
 
 
 
@@ -71,7 +79,7 @@ public class ProductDAO {
         }
         Collections.shuffle(productList); // this is done on purpose to simulate that database don't guarantee order
         // simulate a random delay
-        randomPause(0,5);
+        randomPause(4000,5000);
         return productList;
     }
 

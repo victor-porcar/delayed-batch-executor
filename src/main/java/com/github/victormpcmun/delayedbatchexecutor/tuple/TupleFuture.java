@@ -1,27 +1,15 @@
-package com.github.victormpcmun.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor.tuple;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-class Tuple<T> implements Future<T> {
+public class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
-    private boolean done;
-    private T result;
-    private final Object[] argsAsArray;
-
-    Tuple(Object... argsAsArray) {
-        super();
-        this.result = null;
-        this.done = false;
-        this.argsAsArray = argsAsArray;
+    public TupleFuture(Object... argsAsArray) {
+        super(argsAsArray);
     }
-
-    int getArgsSize() {
-        return argsAsArray.length;
-    }
-
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
@@ -35,29 +23,23 @@ class Tuple<T> implements Future<T> {
 
     @Override
     public boolean isDone() {
-        return done;
+        return super.isDone();
     }
 
-    Object getArgumentByPosition(int argPosition) {
-        return argsAsArray[argPosition];
-    }
 
-    void continueIfIsWaiting() {
+    @Override
+    public void continueIfIsWaiting() {
         synchronized (this) {
             this.notify();
         }
     }
 
-    void setResult(T result) {
-        this.result = result;
-    }
-
-    void commitResult() {
+    @Override
+    public void commitResult() {
         synchronized (this) {
             this.done = true;
         }
     }
-
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {

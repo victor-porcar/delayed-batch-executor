@@ -1,6 +1,11 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
 
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleFuture;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListArgs;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
+import reactor.core.publisher.Mono;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -61,10 +66,18 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      */
 
     public Future<Z> executeAsync(A arg1) {
-        Tuple<Z> tuple = new Tuple<>(arg1);
-        executeWithArgs(tuple);
-        return tuple;
+        TupleFuture<Z> tupleFuture = new TupleFuture<>(arg1);
+        executeWithArgs(tupleFuture);
+        return tupleFuture;
     }
+
+    public <Z> Mono<Z> executeAsMono(A arg1) {
+        TupleMono<Z> tupleMono = new TupleMono<>(arg1);
+        Mono<Z> monoResult = Mono.create(monoSink -> doSetSink(tupleMono, monoSink));
+        executeWithArgs(tupleMono);
+        return monoResult;
+    }
+
 
     @Override
     protected  List<Object> getResultFromTupleList(TupleListArgs tupleListArgs) {

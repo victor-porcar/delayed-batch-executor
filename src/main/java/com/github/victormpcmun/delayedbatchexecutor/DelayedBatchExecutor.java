@@ -1,6 +1,10 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListArgs;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.MonoSink;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
@@ -167,6 +171,12 @@ public abstract class DelayedBatchExecutor {
 		Flux<Tuple> flux = source.publish().autoConnect();
         flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
     }
+
+
+    static <Z> void doSetSink(TupleMono<Z> tuple, MonoSink<Z> sinker) {
+        tuple.setMonoSink(sinker);
+    }
+
 
 
     protected abstract List<Object> getResultFromTupleList(TupleListArgs tupleListArgs);
