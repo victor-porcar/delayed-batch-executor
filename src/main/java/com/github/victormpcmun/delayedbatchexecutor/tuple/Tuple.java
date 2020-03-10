@@ -6,6 +6,8 @@ public abstract class Tuple<T>  {
     protected T result;
     protected final Object[] argsAsArray;
 
+    protected RuntimeException runtimeException;
+
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
@@ -38,4 +40,16 @@ public abstract class Tuple<T>  {
 
 
     public abstract void continueIfIsWaiting();
+
+    public RuntimeException getRuntimeException() {
+        return runtimeException;
+    }
+
+    public void setRuntimeException(RuntimeException runtimeException) {
+        this.runtimeException = runtimeException;
+    }
+
+    public boolean hasRuntimeException() {
+        return runtimeException!=null;
+    }
 }

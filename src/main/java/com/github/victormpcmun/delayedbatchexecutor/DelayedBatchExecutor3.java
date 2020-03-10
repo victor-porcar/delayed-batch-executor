@@ -3,7 +3,7 @@ package com.github.victormpcmun.delayedbatchexecutor;
 
 import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
 import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleFuture;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListArgs;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListTransposer;
 import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
 import reactor.core.publisher.Mono;
 
@@ -19,11 +19,40 @@ import java.util.concurrent.Future;
  */
 public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
 
-    private final CallBack3 userFunctionToBeInvoked;
+    private final CallBack3 handler;
 
-    DelayedBatchExecutor3(Duration windowTime, int size, CallBack3 userFunctionToBeInvoked) {
+
+    @FunctionalInterface
+    public interface CallBack3<Z,A,B> {
+        List<Z> apply(List<A> firstParam, List<B> secondParam);
+    }
+
+
+    /**
+     * Creates an instance of a DelayedBatchExecutor3&lt;Z,A,B&gt;,
+     * which is a subclass of a DelayedBatchExecutor for two arguments.
+     * <p>
+     * @param  <Z>  the return type
+     * @param  <A>  the type of the first argument
+     * @param  <B>  the type of the second argument
+     * @param  windowTime  the time of the window time, defined as a java.time.Duration
+     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
+     * @param  callBack the method that will receive a list of type A and a list of type B, having both the same size and return a list Type Z, which must have he size of the lists received
+     * @return  an instance of type Z
+     *
+     * @author Victor Porcar
+     *
+     */
+
+    public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> define(Duration windowTime, int size, CallBack3<Z,A,B> callBack) {
+        return new DelayedBatchExecutor3<>(windowTime, size, callBack);
+    }
+
+
+
+    private DelayedBatchExecutor3(Duration windowTime, int size, CallBack3 handler) {
         super(windowTime, size);
-        this.userFunctionToBeInvoked=userFunctionToBeInvoked;
+        this.handler=handler;
     }
 
     /**
@@ -65,21 +94,25 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
     public Future<Z> executeAsFuture(A arg1, B arg2) {
-        TupleFuture<Z> tuple = new TupleFuture<>(arg1,arg2);
-        executeWithArgs(tuple);
-        return tuple;
+        TupleFuture<Z> tupleFuture = TupleFuture.create(arg1, arg2);
+        enlistTuple(tupleFuture);
+        Future<Z> future = tupleFuture.getFuture();
+        return future;
     }
 
     public <Z> Mono<Z> executeAsMono(A arg1, B arg2) {
-        TupleMono<Z> tupleMono = new TupleMono<>(arg1, arg2);
-        Mono<Z> monoResult = Mono.create(monoSink -> doSetSink(tupleMono, monoSink));
-        executeWithArgs(tupleMono);
-        return monoResult;
+        TupleMono<Z> tupleMono = TupleMono.create(arg1, arg2);
+        enlistTuple(tupleMono);
+        Mono<Z> mono = tupleMono.getMono();
+        return mono;
     }
 
-
     @Override
-    protected  List<Object> getResultFromTupleList(TupleListArgs tupleListArgs) {
-        return userFunctionToBeInvoked.apply(tupleListArgs.getArgsList(0), tupleListArgs.getArgsList(1));
+    protected  List<Object> getResultFromTupleList( List<List<Object>> transposedTupleList) {
+        List<Object> resultList = handler.apply(
+                transposedTupleList.get(0),
+                transposedTupleList.get(1)
+        );
+        return resultList;
     }
 }

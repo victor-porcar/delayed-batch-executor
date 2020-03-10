@@ -27,8 +27,8 @@ public class DelayedBatchExecutorTest {
     private static final int BYTES_IN_MEGABYTES = 1020*1024;
 
 
-    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMinBoundary = DelayedBatchExecutor.define( Duration.ofMillis(1), 1,this::doQueryMultipleParametersSimulation);
-    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMaxBoundary = DelayedBatchExecutor.define(DelayedBatchExecutor.MAX_TIME, DelayedBatchExecutor.MAX_SIZE, this::doQueryMultipleParametersSimulation);
+    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMinBoundary = DelayedBatchExecutor3.define( Duration.ofMillis(1), 1,this::doQueryMultipleParametersSimulation);
+    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMaxBoundary = DelayedBatchExecutor3.define(DelayedBatchExecutor.MAX_TIME, DelayedBatchExecutor.MAX_SIZE, this::doQueryMultipleParametersSimulation);
 
 
     @Test

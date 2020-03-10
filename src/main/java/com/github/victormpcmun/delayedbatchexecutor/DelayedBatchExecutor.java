@@ -1,18 +1,20 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
 import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListArgs;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
+import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListTransposer;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.MonoSink;
 import reactor.core.publisher.UnicastProcessor;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public abstract class DelayedBatchExecutor {
@@ -28,138 +30,33 @@ public abstract class DelayedBatchExecutor {
     private final Duration windowTime;
 
 	private final UnicastProcessor<Tuple> source;
-
-
-    @FunctionalInterface
-    public interface CallBack2<Z,A> {
-          List<Z> apply(List<A> firstParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack3<Z,A,B> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack4<Z,A,B,C> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack5<Z,A,B,C,D> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam, List<D> fourthParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack6<Z,A,B,C,D,E> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam, List<D> fourthParam, List<E> fifthParam);
-    }
+    Queue<Tuple> threadSafeQueue;
+    private ExecutorService executorService;
 
 
 
-    /**
-     * Creates an instance of a DelayedBatchExecutor2&lt;Z,A&gt;,
-     * which is a subclass of a DelayedBatchExecutor for one argument.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A and returns a list of Type Z, which must have he size of the list received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
+    /*
+https://github.com/reactor/reactor-core/issues/1557
+          ExecutorService workers = Executors.newFixedThreadPool(4);
+
+        AtomicBoolean down = new AtomicBoolean();
+
+        Flux.create(sink -> {
+            produceRequestedTo(down, sink);
+        }).bufferTimeout(400, Duration.ofMillis(200))
+                .doOnError(t -> {
+                    t.printStackTrace();
+                    down.set(true);
+                })
+                .publishOn(Schedulers.fromExecutor(workers), 4)
+                .subscribe(this::processBuffer);
+
+        Thread.sleep(3500);
+
+        workers.shutdownNow();
+
+        assertFalse(down.get());
      */
-
-
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, CallBack2<Z,A> callBack) {
-        return new DelayedBatchExecutor2<>(windowTime, size, callBack);
-    }
-
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor3&lt;Z,A,B&gt;,
-     * which is a subclass of a DelayedBatchExecutor for two arguments.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A and a list of type B, having both the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-    public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> define(Duration windowTime, int size, CallBack3<Z,A,B> callBack) {
-        return new DelayedBatchExecutor3<>(windowTime, size, callBack);
-    }
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor4&lt;Z,A,B,C&gt;,
-     * which is a subclass of a DelayedBatchExecutor for three arguments.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B and a list of type C having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-    public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> define(Duration windowTime, int size, CallBack4<Z,A,B,C> callBack) {
-        return new DelayedBatchExecutor4<>(windowTime, size, callBack);
-    }
-
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor5&lt;Z,A,B,C,D&gt;,
-     * which is a subclass of a DelayedBatchExecutor for four arguments.
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  <D>  the type of the fourth argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B, a list of type C and a list of type D having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-    public static <Z,A,B,C,D> DelayedBatchExecutor5<Z,A,B,C,D> define(Duration windowTime, int size, CallBack5<Z,A,B,C,D> callBack) {
-        return new DelayedBatchExecutor5<>(windowTime, size, callBack);
-    }
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor6&lt;Z,A,B,C,D&gt;,
-     * which is a subclass of a DelayedBatchExecutor for five arguments.
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  <D>  the type of the fourth argument
-     * @param  <E>  the type of the fifth argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B, a list of type C, a list of type D and a list of type E having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-    public static <Z,A,B,C,D,E> DelayedBatchExecutor6<Z,A,B,C,D,E> define(Duration windowTime, int size, CallBack6<Z,A,B,C,D,E> callBack) {
-        return new DelayedBatchExecutor6<>(windowTime, size, callBack);
-    }
 
 
     protected DelayedBatchExecutor(Duration windowTime, int size) {
@@ -167,37 +64,50 @@ public abstract class DelayedBatchExecutor {
         validateBoundaries(size, windowTime);
         this.size = size;
         this.windowTime = windowTime;
-        this.source = UnicastProcessor.create( new ArrayBlockingQueue<>(QUEUE_SIZE));  // => https://github.com/reactor/reactor-core/issues/469
-		Flux<Tuple> flux = source.publish().autoConnect();
-        flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
+
+
+        threadSafeQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
+        this.source = UnicastProcessor.create(threadSafeQueue);
+        Flux<Tuple> flux = source.publish().autoConnect();
+        executorService = Executors.newFixedThreadPool(2);
+         flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
     }
 
 
-    static <Z> void doSetSink(TupleMono<Z> tuple, MonoSink<Z> sinker) {
-        tuple.setMonoSink(sinker);
-    }
 
 
+    protected abstract List<Object> getResultFromTupleList(List<List<Object>>  transposedTupleList);
 
-    protected abstract List<Object> getResultFromTupleList(TupleListArgs tupleListArgs);
-
-    private void executeList(List<Tuple> paramList) {
+    private void executeList(List<Tuple> tupleList) {
         CompletableFuture.runAsync(() -> {
+            List result = new ArrayList();
+            List resizedList = new ArrayList();
+            RuntimeException runtimeException=null;
+            try {
+                List<List<Object>> transposedTupleList = TupleListTransposer.transpose(tupleList);
+                result = getResultFromTupleList(transposedTupleList);
+            } catch (RuntimeException e) {
+                    runtimeException=e;
+            }
+            if (runtimeException==null) {
+                resizedList = ensureSizeFillingWithNullsIfNecessary(result, tupleList.size());
+            }
 
-            List result = getResultFromTupleList(new TupleListArgs(paramList));
-            List resizedList = ensureSizeFillingWithNullsIfNecessary(result, paramList.size());
-
-            for (int index=0; index<paramList.size(); index++) {
-                Tuple tuple = paramList.get(index);
-                tuple.setResult(resizedList.get(index));
+            for (int index=0; index<tupleList.size(); index++) {
+                Tuple tuple = tupleList.get(index);
+                if (runtimeException==null) {
+                    tuple.setResult(resizedList.get(index));
+                } else {
+                    tuple.setRuntimeException(runtimeException);
+                }
                 tuple.commitResult();
                 tuple.continueIfIsWaiting();
             }
-        });
+         }, executorService);
     }
 
 
-   <Z> void executeWithArgs(Tuple<Z> param) {
+   <Z> void enlistTuple(Tuple<Z> param) {
         source.onNext(param);
     }
 

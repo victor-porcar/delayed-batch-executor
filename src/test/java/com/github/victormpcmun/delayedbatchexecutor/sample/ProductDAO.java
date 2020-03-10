@@ -20,7 +20,7 @@ public class ProductDAO {
     public static final ProductDAO productDAOSingleton = new ProductDAO();
 
     private final DelayedBatchExecutor2<Product, Integer> delayedBatchExecutorProductById =
-                   DelayedBatchExecutor.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
+                   DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
 
 
     public Product getProductById(Integer productId) {
@@ -29,7 +29,7 @@ public class ProductDAO {
 
 
     public Future< Product> getProductByIdAsync(Integer productId) {
-        return  delayedBatchExecutorProductById.executeAsync(productId);
+        return  delayedBatchExecutorProductById.executeAsFuture(productId);
     }
 
 
