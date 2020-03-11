@@ -1,6 +1,6 @@
 package com.github.victormpcmun.delayedbatchexecutor.tuple;
 
-public abstract class Tuple<T>  {
+abstract class Tuple<T>  {
 
     protected boolean done;
     protected T result;

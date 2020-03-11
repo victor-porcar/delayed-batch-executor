@@ -9,8 +9,6 @@ import java.util.concurrent.TimeoutException;
 
 public class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
-
-
     public static <T> TupleFuture<T>  create(Object... argsAsArray) {
         TupleFuture tupleFuture = new TupleFuture(argsAsArray);
         return tupleFuture;
