@@ -71,9 +71,6 @@ public class BasicTest {
 
 
 
-
-
-
     private List<Integer> retrieveProductsByIds(List<Integer> params) {
         System.out.println(params.size() + "   " + Thread.currentThread().getName());
         List<Integer> result = new ArrayList<>();

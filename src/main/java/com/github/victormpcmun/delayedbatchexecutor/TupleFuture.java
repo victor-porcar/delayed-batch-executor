@@ -30,7 +30,7 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
             }
         }
         if (hasRuntimeException()) {
-            throw getRuntimeException();
+            throw new ExecutionException(getRuntimeException());
         }
         return result;
     }

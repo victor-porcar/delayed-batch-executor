@@ -15,11 +15,9 @@ class TupleMono<T> extends Tuple<T>  {
         return tupleMono;
       }
 
-
     public Mono<T> getMono() {
           return mono;
     }
-
 
       private TupleMono(Object... argsAsArray) {
           super(argsAsArray);
@@ -28,7 +26,7 @@ class TupleMono<T> extends Tuple<T>  {
         @Override
        public void continueIfIsWaiting() {
           if (existSink()  && isDone()) {
-                monoSink.success(result);
+              doSink();
             }
 
         }
@@ -37,11 +35,19 @@ class TupleMono<T> extends Tuple<T>  {
         public void setMonoSink(MonoSink<T> monoSink) {
             this.monoSink = monoSink;
             if (isDone()) {
-                monoSink.success(result);
+                doSink();
             }
         }
 
         public boolean existSink() {
             return monoSink!=null;
+        }
+
+
+        private void doSink() {
+            if (hasRuntimeException()) {
+                monoSink.error(getRuntimeException());
+            }
+            monoSink.success(result);
         }
 }
