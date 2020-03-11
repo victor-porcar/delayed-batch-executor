@@ -1,93 +1,122 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-
-
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleFuture;
-
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
+import com.github.victormpcmun.delayedbatchexecutor.callback.CallBack2;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * A subclass of a DelayedBatchExecutor for one argument.
+ * a Delayed Batch Executor for one argument (type A) and return type Z
+ <br>
+ <br>
+ * Example:
+ <br>
+ * <pre>
+ * {@code
  *
+ * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::myCallBack);
+ *
+ * ...
+ *
+ * public void logicUsingBlocking(String param1) {
+ *    Integer integerResult = dbe.execute(param1); // the thread will be blocked until the result is available
+ *    // compute logic with integerResult
+ * }
+ *
+ *
+ * public void logicUsingFuture(String param1) {
+ *    Future<Integer> resultAsFutureInteger = dbe.executeAsFuture(param1); // the thread will not  be blocked
+ *    // computer something else
+ *    Integer integerResult = resultAsFutureInteger.get();  // the thread will be blocked until the result is available (if it is not at the invocation time)
+ *    // compute logic with integerResult
+ * }
+ *
+ *
+ * public void logicUsingMono(String param1) {
+ *    Mono<Integer> resultAsMonoInteger = dbe.executeAsMono(param1); // the thread will not  be blocked
+ *    resultAsMonoInteger.subscribe(integerResult -> {
+ *      // compute logic with integerResult
+ *    });
+ * }
+ *
+ *
+ *
+ * List<Integer> myCallBack(List<String> arg1List) {
+ *      List<Integer> result = ...
+ *	    ...
+ *      return result;
+ *}
+ *}
+ * </pre>
  * @author Victor Porcar
  *
  */
 
 public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
-    private final CallBack2 handler;
-
-
-
-    @FunctionalInterface
-    public interface CallBack2<Z,A> {
-        List<Z> apply(List<A> firstParam);
-    }
+    private final CallBack2 callback;
 
     /**
-     * Creates an instance of a DelayedBatchExecutor2&lt;Z,A&gt;,
-     * which is a subclass of a DelayedBatchExecutor for one argument.
-     * <p>
+     * Factory method to create an instance of a Delayed Batch Executor for one argument (type A) and return type Z
+     * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A and returns a list of Type Z, which must have he size of the list received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
+     * @param  windowTime  the time of the window time, defined as a {@link Duration }
+     * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
+     * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
+     * @return  an instance of {@link DelayedBatchExecutor2}
      *
      */
 
 
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, CallBack2<Z,A> callBack) {
-        return new DelayedBatchExecutor2<>(windowTime, size, callBack);
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, CallBack2<Z,A> callBack2) {
+        return new DelayedBatchExecutor2<>(windowTime, size, callBack2);
     }
 
 
 
-    private DelayedBatchExecutor2(Duration windowTime, int size, CallBack2 handler) {
+    /**
+     * Factory method to create an instance of a Delayed Batch Executor for one argument (type A) and return type Z
+     * <br>
+     * @param  <Z>  the return type
+     * @param  <A>  the type of the argument
+     * @param  windowTime  the time of the window time, defined as a {@link Duration }
+     * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
+     * @param  executorService to define the pool of threads to executed the callBack method in asynchronous mode
+     * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
+     * @return  an instance of {@link DelayedBatchExecutor2}
+     *
+     */
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, ExecutorService executorService, CallBack2<Z, A> callBack2) {
+        return new DelayedBatchExecutor2<>(windowTime, size, executorService, callBack2);
+    }
+
+    private DelayedBatchExecutor2(Duration windowTime, int size, ExecutorService executorService, CallBack2 callback) {
+        super(windowTime, size, executorService);
+        this.callback = callback;
+    }
+
+    private DelayedBatchExecutor2(Duration windowTime, int size,   CallBack2 callback) {
         super(windowTime, size);
-        this.handler=handler;
+        this.callback = callback;
     }
 
-    /**
-     * returns the result of execution of the callback method of the DelayedBatchExecutor for the given parameter.
-     * It blocks the execution of the thread until the result is available
-     * which means that it could take in the worst case the windowTime defined for the DelayedBatchExecutor.
-     *
-     * <p>
-     *
-     * @param  arg1 an instance of the  argument defined for the DelayedBatchExecutor
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-
-
 
     /**
-     * returns a Future of the result of execution of the callback method of the DelayedBatchExecutor for the given parameter.
-     * It does NOT block the execution of the thread.
+     * Return the result of type Z, which is obtained from the returned list of the callback method for the given parameter.
+     * <br>
+     * The invoking thread is blocked until the result is available.
+     * <br>
      *
-     * <p>
+     * @param  arg1 value of the first argument defined for this Delayed Batch Executor
+     * @return  the result (type Z)
      *
-     * @param  arg1 an instance of the  argument defined for the DelayedBatchExecutor
-     * @return  a Future of of type Z
-     *
-     * @author Victor Porcar
      *
      */
-
-
     public Z execute(A arg1) {
         Future<Z> future = executeAsFuture(arg1);
         try {
@@ -97,6 +126,18 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
         }
     }
 
+    /**
+     * Return a {@link Future } containing the value obtained from the returned list of the callback method for the given parameter.
+     * <br>
+     * The invoking thread is not blocked.
+     *
+     * <br>
+     *
+     * @param  arg1 value of the first argument defined for this Delayed Batch Executor
+     * @return  a {@link Future } for the result (type Z)
+     *
+     *
+     */
     public Future<Z> executeAsFuture(A arg1) {
         TupleFuture<Z> tupleFuture = TupleFuture.create(arg1);
         enlistTuple(tupleFuture);
@@ -104,6 +145,20 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
         return future;
     }
 
+
+
+    /**
+     * Return a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>} publishing the value obtained from the returned list of the callback method for the given parameter.
+     * <br>
+     * The invoking thread is not blocked.
+     *
+     * <br>
+     *
+     * @param  arg1  value of the first argument defined for this Delayed Batch Executor
+     * @return  a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>} for the result (type Z)
+     *
+     *
+     */
     public <Z> Mono<Z> executeAsMono(A arg1) {
         TupleMono<Z> tupleMono = TupleMono.create(arg1);
         enlistTuple(tupleMono);
@@ -114,7 +169,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
     @Override
     protected  List<Object> getResultFromTupleList( List<List<Object>> transposedTupleList) {
-        List<Object> resultList = handler.apply(transposedTupleList.get(0));
+        List<Object> resultList = callback.apply(transposedTupleList.get(0));
         return resultList;
     }
 }

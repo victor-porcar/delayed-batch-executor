@@ -1,4 +1,4 @@
-package com.github.victormpcmun.delayedbatchexecutor;
+package com.github.victormpcmun.delayedbatchexecutor.callback;
 
 import java.util.List;
 

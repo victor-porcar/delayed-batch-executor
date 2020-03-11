@@ -1,4 +1,4 @@
-package com.github.victormpcmun.delayedbatchexecutor.tuple;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 abstract class Tuple<T>  {
 

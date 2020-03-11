@@ -1,13 +1,11 @@
-package com.github.victormpcmun.delayedbatchexecutor.tuple;
-
-import reactor.core.publisher.Mono;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class TupleFuture<T> extends Tuple<T> implements Future<T> {
+class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
     public static <T> TupleFuture<T>  create(Object... argsAsArray) {
         TupleFuture tupleFuture = new TupleFuture(argsAsArray);

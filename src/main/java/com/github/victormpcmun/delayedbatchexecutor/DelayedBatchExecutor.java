@@ -4,23 +4,18 @@ import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
 import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListTransposer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
+abstract class DelayedBatchExecutor {
 
-public abstract class DelayedBatchExecutor {
-
-    public static final int MAX_SIZE = 1024;
-	public static final Duration MAX_TIME = Duration.ofSeconds(10);
+    protected static final int MAX_SIZE = 1024;
+	protected static final Duration MAX_TIME = Duration.ofSeconds(10);
 	private static final Duration MIN_TIME=Duration.ofMillis(1);
 
 
@@ -30,47 +25,26 @@ public abstract class DelayedBatchExecutor {
     private final Duration windowTime;
 
 	private final UnicastProcessor<Tuple> source;
-    Queue<Tuple> threadSafeQueue;
+    private Queue<Tuple> threadSafeQueue;
     private ExecutorService executorService;
 
 
-
-    /*
-https://github.com/reactor/reactor-core/issues/1557
-          ExecutorService workers = Executors.newFixedThreadPool(4);
-
-        AtomicBoolean down = new AtomicBoolean();
-
-        Flux.create(sink -> {
-            produceRequestedTo(down, sink);
-        }).bufferTimeout(400, Duration.ofMillis(200))
-                .doOnError(t -> {
-                    t.printStackTrace();
-                    down.set(true);
-                })
-                .publishOn(Schedulers.fromExecutor(workers), 4)
-                .subscribe(this::processBuffer);
-
-        Thread.sleep(3500);
-
-        workers.shutdownNow();
-
-        assertFalse(down.get());
-     */
-
-
     protected DelayedBatchExecutor(Duration windowTime, int size) {
+       this(windowTime, size, null);
+    }
+
+
+    protected DelayedBatchExecutor(Duration windowTime, int size, ExecutorService executorService) {
         super();
         validateBoundaries(size, windowTime);
         this.size = size;
         this.windowTime = windowTime;
+        this.executorService = executorService;
 
-
-        threadSafeQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
+        this.threadSafeQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
         this.source = UnicastProcessor.create(threadSafeQueue);
         Flux<Tuple> flux = source.publish().autoConnect();
-        executorService = Executors.newFixedThreadPool(2);
-         flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
+        flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
     }
 
 
@@ -103,7 +77,7 @@ https://github.com/reactor/reactor-core/issues/1557
                 tuple.commitResult();
                 tuple.continueIfIsWaiting();
             }
-         }, executorService);
+         }, this.executorService);
     }
 
 

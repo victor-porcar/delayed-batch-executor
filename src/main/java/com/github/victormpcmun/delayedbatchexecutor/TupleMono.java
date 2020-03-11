@@ -1,10 +1,10 @@
-package com.github.victormpcmun.delayedbatchexecutor.tuple;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 
-public class TupleMono<T> extends Tuple<T>  {
+class TupleMono<T> extends Tuple<T>  {
 
       MonoSink<T> monoSink;
       Mono<T> mono;

@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
-import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor;
 import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor2;
 import reactor.core.publisher.Mono;
 
@@ -21,6 +20,14 @@ public class ProductDAO {
 
     private final DelayedBatchExecutor2<Product, Integer> delayedBatchExecutorProductById =
                    DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
+
+
+    private final DelayedBatchExecutor2<Integer, String> delayedBatchExecutor =
+            DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, arg1List -> {
+                List<Integer> result = new ArrayList<>();
+                // ...
+                return result;
+            });
 
 
     public Product getProductById(Integer productId) {

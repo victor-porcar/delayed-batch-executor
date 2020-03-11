@@ -1,9 +1,9 @@
-package com.github.victormpcmun.delayedbatchexecutor.tuple;
+package com.github.victormpcmun.delayedbatchexecutor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TupleListTransposer {
+class TupleListTransposer {
 
 
     public static List<List<Object>> transpose(List<Tuple> paramList) {
