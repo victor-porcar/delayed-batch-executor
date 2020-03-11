@@ -1,7 +1,5 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListTransposer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
@@ -18,7 +16,7 @@ abstract class DelayedBatchExecutor {
 	protected static final Duration MAX_TIME = Duration.ofSeconds(10);
 	private static final Duration MIN_TIME=Duration.ofMillis(1);
 
-
+    private static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
     private static final int QUEUE_SIZE = 4096; // max elements queued
 
     private final int size;
@@ -30,7 +28,7 @@ abstract class DelayedBatchExecutor {
 
 
     protected DelayedBatchExecutor(Duration windowTime, int size) {
-       this(windowTime, size, null);
+       this(windowTime, size, Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER));
     }
 
 

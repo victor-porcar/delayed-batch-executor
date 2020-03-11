@@ -109,9 +109,14 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     /**
      * Return the result of type Z, which is obtained from the returned list of the callback method for the given parameter.
      * <br>
-     * The invoking thread is blocked until the result is available.
      * <br>
-     *
+     * It will throw any {@link RuntimeException} thrown inside of the  {@link CallBack2 }
+     * <br>
+     * <br>
+     * The invoking thread is blocked until the result is available as follows:
+     * <br>
+     * <br>
+     * <img src="{@docRoot}/doc-files/blocking.svg" />
      * @param  arg1 value of the first argument defined for this Delayed Batch Executor
      * @return  the result (type Z)
      *
@@ -129,8 +134,14 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     /**
      * Return a {@link Future } containing the value obtained from the returned list of the callback method for the given parameter.
      * <br>
-     * The invoking thread is not blocked.
-     *
+     * <br>
+     * PARA_HACER  It will throw any {@link RuntimeException} thrown inside of the  {@link CallBack2 }
+     * <br>
+     * <br>
+     * The invoking thread is not blocked. The result will be available by invoking method {@link Future#get()} of the returned  {@link Future }, blocking the thread until the result is available if it wasn't.
+     * <br>
+     * <br>
+     * <img src="{@docRoot}/doc-files/future.svg" />
      * <br>
      *
      * @param  arg1 value of the first argument defined for this Delayed Batch Executor
@@ -150,8 +161,14 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     /**
      * Return a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>} publishing the value obtained from the returned list of the callback method for the given parameter.
      * <br>
-     * The invoking thread is not blocked.
-     *
+     * <br>
+     * PARA_HACER  It will throw any {@link RuntimeException} thrown inside of the  {@link CallBack2 }
+     * <br>
+     * <br>
+     * The invoking thread is not blocked, following the reactive principle
+     * <br>
+     * <br>
+     * <img src="{@docRoot}/doc-files/mono.svg" />
      * <br>
      *
      * @param  arg1  value of the first argument defined for this Delayed Batch Executor
