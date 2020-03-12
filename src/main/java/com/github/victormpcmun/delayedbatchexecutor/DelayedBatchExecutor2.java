@@ -149,7 +149,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * @param  arg1 value of the first argument defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result (type Z)
      *
-     *
+     *d: The environment variable JAVA_HOME is not correctly set.
      */
     public Future<Z> executeAsFuture(A arg1) {
         TupleFuture<Z> tupleFuture = TupleFuture.create(arg1);

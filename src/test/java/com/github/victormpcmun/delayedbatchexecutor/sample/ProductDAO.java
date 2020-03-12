@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Future;
 
 import com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor2;
-import reactor.core.publisher.Mono;
+
 
 
 // make this class singleton properly
@@ -22,30 +21,9 @@ public class ProductDAO {
                    DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
 
 
-    private final DelayedBatchExecutor2<Integer, String> delayedBatchExecutor =
-            DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, arg1List -> {
-                List<Integer> result = new ArrayList<>();
-                // ...
-                return result;
-            });
-
-
     public Product getProductById(Integer productId) {
         return  delayedBatchExecutorProductById.execute(productId);
     }
-
-
-    public Future< Product> getProductByIdAsync(Integer productId) {
-        return  delayedBatchExecutorProductById.executeAsFuture(productId);
-    }
-
-
-    public Mono< Product> getProductByIdMono(Integer productId) {
-        return  delayedBatchExecutorProductById.executeAsMono(productId);
-    }
-
-
-
 
 
     private List<Product> retrieveProductsByIds(List<Integer> productIdsList) {
@@ -61,7 +39,6 @@ public class ProductDAO {
         return result;
     }
 
-
     private List<Product>  guaranteeMatching(List<Integer> productIdsList, List<Product>  productListFromDatabase) {
         List<Product> result = new ArrayList<>();
         for (Integer productId : productIdsList) {
@@ -71,11 +48,9 @@ public class ProductDAO {
         return result;
     }
 
-
     private Product findProductByIdOrNull( List<Product>  productListFromDatabase, Integer productId) {
         return productListFromDatabase.stream().filter(product -> Objects.equals(product.getId(), productId)).findFirst().orElse(null);
     }
-
 
 
     private List<Product> simulateLaunchQuery(List<Integer> productIdsList) {
@@ -85,18 +60,7 @@ public class ProductDAO {
 
         }
         Collections.shuffle(productList); // this is done on purpose to simulate that database don't guarantee order
-        // simulate a random delay
-        randomPause(4000,5000);
         return productList;
-    }
-
-
-    private void randomPause(int millisecondsInit, int millisecondsEnd) {
-        try {
-            Thread.sleep(millisecondsInit + (int) (Math.random() * millisecondsEnd));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
 }

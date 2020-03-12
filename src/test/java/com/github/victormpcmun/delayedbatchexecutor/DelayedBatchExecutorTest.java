@@ -1,128 +1,229 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DelayedBatchExecutorTest {
-
     private final Logger log = LoggerFactory.getLogger(getClass());
+    private final static String PREFIX = "P";
 
-    private static final int DO_QUERY_SIMULATION_MIN_TIME = 10;
-    private static final int DO_QUERY_SIMULATION_MAX_TIME = 100;
+    private final static int CONCURRENT_THREADS=10;
 
-    private static final int SECONDS_SIMULATION = 1;
-    private static final int ONE_SECOND_MILLISECONDS = 1000;
+    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK = 2000;
+    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK = 3000;
 
-    private static final int BYTES_IN_MEGABYTES = 1020*1024;
-
-
-    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMinBoundary = DelayedBatchExecutor3.define( Duration.ofMillis(1), 1,this::doQueryMultipleParametersSimulation);
-    private final DelayedBatchExecutor3<String, String, String> delayedExecutorMaxBoundary = DelayedBatchExecutor3.define(DelayedBatchExecutor.MAX_TIME, DelayedBatchExecutor.MAX_SIZE, this::doQueryMultipleParametersSimulation);
+    private final static Duration DBE_DURATION = Duration.ofMillis(50);
+    private final static Integer DBE_MAX_SIZE = 2;
 
 
-    @Test
-    public void testMinBoundaries() {
-        createThreadsAndExecute(2, delayedExecutorMinBoundary);
-        createThreadsAndExecute(64, delayedExecutorMinBoundary);
-        createThreadsAndExecute(128, delayedExecutorMinBoundary);
+    // for each integer it returns the concatenated String of constant PREFIX + integer, example: for Integer 23 it returns "P23"
+    private List<String> delayedBatchExecutorCallback(List<Integer> integerList) {
 
-    }
-
-    @Test
-    public void testMaxBoundaries() {
-        createThreadsAndExecute(1, delayedExecutorMaxBoundary);
-        createThreadsAndExecute(64, delayedExecutorMaxBoundary);
-        createThreadsAndExecute(128, delayedExecutorMaxBoundary);
-    }
-
-
-    private void createThreadsAndExecute(int threadsPerSecond, DelayedBatchExecutor3<String, String, String> delayedBulkExecutor) {
-        log.info("======>  BeginningTest for DelayedBulkExecutor: {} => Threads Per Second: {}",   delayedBulkExecutor, threadsPerSecond);
-        List<Thread> allCreatedThreads = new ArrayList<>();
-
-        for (int second = 1; second <= SECONDS_SIMULATION; second++) {
-            String threadsPrefixName = "THREAD_SECOND" + second;
-            List<Thread> threads = createThreadsWithPrefixName(threadsPerSecond, threadsPrefixName, delayedBulkExecutor);
-            threads.forEach(Thread::start);
-            pause(ONE_SECOND_MILLISECONDS);
-            allCreatedThreads.addAll(threads);
+        List<String> stringList = new ArrayList<>();
+        for (Integer value: integerList) {
+            stringList.add(PREFIX+value);
         }
 
-        allCreatedThreads.forEach(this::join); // wait until all threads have finished
-        log.info("ENVIRONMENT INFO: {}", getEnvironmentInfo());
+        // simulate a delay of execution
+        int millisecondsWaitSimulation = getRandomIntegerFromInterval(MIN_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK, MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK);
+        sleepCurrentThread(millisecondsWaitSimulation);
 
-       }
+        log.info("Callback. Simulated Exec Time {} ms.  Received args => {}. Returned {}. ", millisecondsWaitSimulation, integerList, stringList );
 
-    private List<Thread> createThreadsWithPrefixName(int totalThreads, String prefixName, DelayedBatchExecutor3<String, String, String> delayedBulkExecutor) {
-        List<Thread> threads = new ArrayList<>();
-        for (int threadCounter = 0; threadCounter < totalThreads; threadCounter++) {
-            final String threadName=prefixName + threadCounter;
-            Thread thread = new Thread(() -> {
-                String arg1 = threadName + "_ARG1";
-                String arg2 = threadName + "_ARG2";
-                String expectedResult = simulateQueryResultForArguments(arg1, arg2);
+        // to force the test to fail, uncomment this:
+        //stringList.set(0,"UNEXPECTED");
+        return stringList;
+    }
 
-                // FIRST TIME SYNC
-                String result = delayedBulkExecutor.execute(arg1, arg2);
-                Assert.assertEquals(result, expectedResult);
+    //--------------------------------------------------------------------------------------------------------------------------
 
-                // SECOND TIME SYNC
-                result = delayedBulkExecutor.execute(arg1, arg2);
-                Assert.assertEquals(result, expectedResult);
+    @Test
+    public void blockingTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallback);
 
-                // ASYNC
-                Future<String>  futureResult = delayedBulkExecutor.executeAsFuture(arg1, arg2);
-                // do something
-                randomPause(100, 500);
-                try {
-                    Assert.assertEquals(futureResult.get(), expectedResult);
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException("Future problem. it shouldn't happen ever", e);
-                }
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,1000);
+            log.info("Before invoking execute with arg {}", randomInteger);
+            String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            log.info("After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+
+            Assert.assertEquals(result,  expectedValue);
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+    @Test
+    public void futureTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallback);
+
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,1000);
+            log.info("Before invoking execute with arg {}", randomInteger);
+
+            String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
+            Future<String> future = dbe2.executeAsFuture(randomInteger); // it will NOT block until the result is available
+
+            log.info("Doing some computation after invoking executeAsFuture");
+
+            String result=null;
+            try {
+                result=future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+            log.info("After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+            Assert.assertEquals(result,  expectedValue);
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+    @Test
+    public void monoTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallback);
+
+        AtomicInteger atomicIntegerCounter = new AtomicInteger(0);
+
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,1000);
+            log.info("Before invoking execute with arg {}", randomInteger);
+
+            String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
+            Mono<String> mono = dbe2.executeAsMono(randomInteger); // it will NOT block the thread
+
+            log.info("Continue with computation after invoking the executeAsMono");
+
+            mono.subscribe(result-> {
+                log.info("Inside Mono. Expected  Value {}. Actual returned value {}", expectedValue, result);
+                Assert.assertEquals(result,  expectedValue);
+                atomicIntegerCounter.incrementAndGet();
 
             });
-            thread.setName(threadName);
-            threads.add(thread);
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+
+        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
+        Assert.assertEquals(CONCURRENT_THREADS, atomicIntegerCounter.get());
+    }
+
+
+
+    @Test(expected = TestRuntimeException.class)
+    public void blockingExceptionTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2LaunchingException = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, integerList -> {throw new TestRuntimeException();});
+
+        Callable<Void> callable = () -> {
+            try {
+                String result = dbe2LaunchingException.execute(1);
+            } catch(TestRuntimeException e) {
+                log.info("It is capturing successfully the exception");
+                throw e;  // will be rethrow in method waitUntilFinishing
+            }
+
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
+    @Test
+    public void monoExceptionTest() {
+        AtomicInteger atomicIntegerCounter = new AtomicInteger(0);
+        DelayedBatchExecutor2<String, Integer> dbe2LaunchingException = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, integerList -> {throw new TestRuntimeException();});
+
+        Callable<Void> callable = () -> {
+
+            Mono<String> mono = dbe2LaunchingException.executeAsMono(1); // it will NOT block the thread
+
+            mono.doOnError( TestRuntimeException.class, e ->
+                { log.info("Successfully processed the exception");
+                    atomicIntegerCounter.incrementAndGet();
+                }).subscribe(result->log.info("This should never be printed:" + result));
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+
+        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
+        Assert.assertEquals(CONCURRENT_THREADS, atomicIntegerCounter.get());
+    }
+
+
+    @Test(expected = TestRuntimeException.class)
+    public void futureExceptionTest() {
+
+        DelayedBatchExecutor2<String, Integer> dbe2LaunchingException = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, integerList -> {throw new TestRuntimeException();});
+
+        Callable<Void> callable = () -> {
+            Future<String> future = dbe2LaunchingException.executeAsFuture(1); // it will NOT block until the result is available
+
+            String result=null;
+            try {
+                result=future.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw (RuntimeException) e.getCause();
+            }
+            return null;
+        };
+
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+    //-----------------------------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------------------------------------------------
+
+    private void waitUntilFinishing(List<Future<Void>> threads) {
+        for (Future future: threads) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw (RuntimeException) e.getCause();
+            }
+        }
+    }
+
+
+    private List<Future<Void>> createThreads(int threadsCount, Callable callable) {
+        ExecutorService es = Executors.newFixedThreadPool(threadsCount);
+        List<Future<Void>> threads = new ArrayList<>();
+        for (int threadCounter = 0; threadCounter < threadsCount; threadCounter++) {
+            threads.add(es.submit(callable));
         }
         return threads;
     }
 
 
-    private List<String> doQueryMultipleParametersSimulation(List<String> listArg1, List<String> listArg2) {
-
-        List<String> resultList = new ArrayList<>();
-
-        for (int i=0; i<listArg1.size(); i++) {
-            resultList.add(simulateQueryResultForArguments(listArg1.get(i), listArg2.get(i)));
-        }
-
-        randomPause(DO_QUERY_SIMULATION_MIN_TIME, DO_QUERY_SIMULATION_MAX_TIME);
-        return resultList;
-    }
-
-
-
-
-    private void randomPause(int millisecondsInit, int millisecondsEnd) {
-        try {
-            Thread.sleep(millisecondsInit + (int) (Math.random() * millisecondsEnd));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void pause(int milliseconds) {
+    public static void sleepCurrentThread(int milliseconds) {
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
@@ -130,27 +231,7 @@ public class DelayedBatchExecutorTest {
         }
     }
 
-
-    private void join(Thread thread) {
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+    private Integer getRandomIntegerFromInterval(int min, int max) {
+        return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
-
-    private String simulateQueryResultForArguments(String a, String b) {
-        return String.format("%s SIMULATION %s", a,b);
-    }
-
-    private String   getEnvironmentInfo() {
-        Runtime rt = Runtime.getRuntime();
-        int totalThreads = Thread.getAllStackTraces().keySet().size();
-        long usedMemoryMB = (rt.totalMemory() - rt.freeMemory()) / BYTES_IN_MEGABYTES;
-        long freeMemoryMB = rt.freeMemory() / BYTES_IN_MEGABYTES;
-        long totalMemoryMB = rt.totalMemory() / BYTES_IN_MEGABYTES;
-        long maxMemoryMB = rt.maxMemory() / BYTES_IN_MEGABYTES;
-        return String.format("Total Threads:%d,  usedMemoryMB:%d, freeMemoryMB:%d, totalMemoryMB:%d, maxMemoryMB:%d", totalThreads, usedMemoryMB, freeMemoryMB, totalMemoryMB, maxMemoryMB);
-    }
-
 }
