@@ -22,7 +22,7 @@ public class DelayedBatchExecutorTest {
     private final static int MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK = 3000;
 
     private final static Duration DBE_DURATION = Duration.ofMillis(50);
-    private final static Integer DBE_MAX_SIZE = 2;
+    private final static Integer DBE_MAX_SIZE = 4;
 
 
     // for each integer it returns the concatenated String of constant PREFIX + integer, example: for Integer 23 it returns "P23"
@@ -48,14 +48,15 @@ public class DelayedBatchExecutorTest {
 
     @Test
     public void blockingTest() {
+
         DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallback);
 
         Callable<Void> callable = () -> {
             Integer randomInteger = getRandomIntegerFromInterval(1,1000);
-            log.info("Before invoking execute with arg {}", randomInteger);
+            log.info("blockingTest=>Before invoking execute with arg {}", randomInteger);
             String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
             String result = dbe2.execute(randomInteger); // it will block until the result is available
-            log.info("After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+            log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
 
             Assert.assertEquals(result,  expectedValue);
             return null;
@@ -68,16 +69,17 @@ public class DelayedBatchExecutorTest {
 
     @Test
     public void futureTest() {
+
         DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallback);
 
         Callable<Void> callable = () -> {
             Integer randomInteger = getRandomIntegerFromInterval(1,1000);
-            log.info("Before invoking execute with arg {}", randomInteger);
+            log.info("futureTest=>Before invoking execute with arg {}", randomInteger);
 
             String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
             Future<String> future = dbe2.executeAsFuture(randomInteger); // it will NOT block until the result is available
 
-            log.info("Doing some computation after invoking executeAsFuture");
+            log.info("futureTest=>Doing some computation after invoking executeAsFuture");
 
             String result=null;
             try {
@@ -85,7 +87,7 @@ public class DelayedBatchExecutorTest {
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
-            log.info("After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+            log.info("futureTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
             Assert.assertEquals(result,  expectedValue);
             return null;
         };
@@ -103,15 +105,15 @@ public class DelayedBatchExecutorTest {
 
         Callable<Void> callable = () -> {
             Integer randomInteger = getRandomIntegerFromInterval(1,1000);
-            log.info("Before invoking execute with arg {}", randomInteger);
+            log.info("monoTest=>Before invoking execute with arg {}", randomInteger);
 
             String expectedValue =  PREFIX + randomInteger; // the String returned by delayedBatchExecutorCallback for a given integer
             Mono<String> mono = dbe2.executeAsMono(randomInteger); // it will NOT block the thread
 
-            log.info("Continue with computation after invoking the executeAsMono");
+            log.info("monoTest=>Continue with computation after invoking the executeAsMono");
 
             mono.subscribe(result-> {
-                log.info("Inside Mono. Expected  Value {}. Actual returned value {}", expectedValue, result);
+                log.info("monoTest=>Inside Mono. Expected  Value {}. Actual returned value {}", expectedValue, result);
                 Assert.assertEquals(result,  expectedValue);
                 atomicIntegerCounter.incrementAndGet();
 
@@ -136,7 +138,7 @@ public class DelayedBatchExecutorTest {
             try {
                 String result = dbe2LaunchingException.execute(1);
             } catch(TestRuntimeException e) {
-                log.info("It is capturing successfully the exception");
+                log.info("blockingExceptionTest=>It is capturing successfully the exception");
                 throw e;  // will be rethrow in method waitUntilFinishing
             }
 
@@ -159,9 +161,9 @@ public class DelayedBatchExecutorTest {
             Mono<String> mono = dbe2LaunchingException.executeAsMono(1); // it will NOT block the thread
 
             mono.doOnError( TestRuntimeException.class, e ->
-                { log.info("Successfully processed the exception");
+                { log.info("monoExceptionTest=>Successfully processed the exception");
                     atomicIntegerCounter.incrementAndGet();
-                }).subscribe(result->log.info("This should never be printed:" + result));
+                }).subscribe(result->log.info("monoExceptionTest=>This should never be printed:" + result));
             return null;
         };
 
@@ -175,7 +177,6 @@ public class DelayedBatchExecutorTest {
 
     @Test(expected = TestRuntimeException.class)
     public void futureExceptionTest() {
-
         DelayedBatchExecutor2<String, Integer> dbe2LaunchingException = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, integerList -> {throw new TestRuntimeException();});
 
         Callable<Void> callable = () -> {
@@ -187,7 +188,12 @@ public class DelayedBatchExecutorTest {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                throw (RuntimeException) e.getCause();
+                RuntimeException actualRuntimeLaunched = (RuntimeException) e.getCause();
+                if (actualRuntimeLaunched instanceof TestRuntimeException) {
+                    log.info("futureExceptionTest=>It is capturing successfully the exception");
+                }
+
+                throw actualRuntimeLaunched;
             }
             return null;
         };

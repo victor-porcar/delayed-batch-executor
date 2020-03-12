@@ -185,7 +185,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
 
     @Override
-    protected  List<Object> getResultFromTupleList( List<List<Object>> transposedTupleList) {
+    protected  List<Object> getResultListFromCallBack(List<List<Object>> transposedTupleList) {
         List<Object> resultList = callback.apply(transposedTupleList.get(0));
         return resultList;
     }

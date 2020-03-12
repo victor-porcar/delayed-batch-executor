@@ -4,8 +4,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
@@ -45,32 +43,35 @@ abstract class DelayedBatchExecutor {
         flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
     }
 
+    protected abstract List<Object> getResultListFromCallBack(List<List<Object>>  transposedTupleList);
 
 
+    private ExecutionResultFromCallback getExecutionResultFromCallback(List<Tuple> tupleList) {
+        List<Object> resultFromCallBack=null;
+        RuntimeException runtimeException=null;
 
-    protected abstract List<Object> getResultFromTupleList(List<List<Object>>  transposedTupleList);
+        List<List<Object>> transposedTupleList = TupleListTransposer.transpose(tupleList);
+        try {
+             resultFromCallBack = getResultListFromCallBack(transposedTupleList);
+        } catch (RuntimeException re) {
+            runtimeException=re;
+        }
+
+        return new ExecutionResultFromCallback(resultFromCallBack, runtimeException, tupleList.size());
+
+    }
 
     private void executeList(List<Tuple> tupleList) {
         CompletableFuture.runAsync(() -> {
-            List result = new ArrayList();
-            List resizedList = new ArrayList();
-            RuntimeException runtimeException=null;
-            try {
-                List<List<Object>> transposedTupleList = TupleListTransposer.transpose(tupleList);
-                result = getResultFromTupleList(transposedTupleList);
-            } catch (RuntimeException e) {
-                    runtimeException=e;
-            }
-            if (runtimeException==null) {
-                resizedList = ensureSizeFillingWithNullsIfNecessary(result, tupleList.size());
-            }
+
+            ExecutionResultFromCallback executionResultFromCallback = getExecutionResultFromCallback(tupleList);
 
             for (int index=0; index<tupleList.size(); index++) {
                 Tuple tuple = tupleList.get(index);
-                if (runtimeException==null) {
-                    tuple.setResult(resizedList.get(index));
+                if (!executionResultFromCallback.runtimeExceptionLaunched()) {
+                    tuple.setResult(executionResultFromCallback.getPositionResult(index));
                 } else {
-                    tuple.setRuntimeException(runtimeException);
+                    tuple.setRuntimeException(executionResultFromCallback.getRuntimeException());
                 }
                 tuple.commitResult();
                 tuple.continueIfIsWaiting();
@@ -98,15 +99,6 @@ abstract class DelayedBatchExecutor {
         return "DelayedBulkExecutor [size=" + size + ", windowTime=" + windowTime + "]";
     }
 
-    private <T> List<T> ensureSizeFillingWithNullsIfNecessary(List<T> list, int size) {
-        if (list==null) {
-            list=Collections.nCopies(size,  null);
-        } else if (list.size()<size) {
-            list = new ArrayList(list); // make it mutable in case it isn't
-            list.addAll(Collections.nCopies(size-list.size(),null));
-        }
-        return list;
-    }
 
 
 }
