@@ -18,8 +18,8 @@ public class DelayedBatchExecutorTest {
 
     private final static int CONCURRENT_THREADS=10;
 
-    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK = 2000;
-    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK = 3000;
+    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
+    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 3000;
 
     private final static Duration DBE_DURATION = Duration.ofMillis(50);
     private final static Integer DBE_MAX_SIZE = 4;
@@ -34,7 +34,7 @@ public class DelayedBatchExecutorTest {
         }
 
         // simulate a delay of execution
-        int millisecondsWaitSimulation = getRandomIntegerFromInterval(MIN_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK, MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK);
+        int millisecondsWaitSimulation = getRandomIntegerFromInterval(MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK, MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK);
         sleepCurrentThread(millisecondsWaitSimulation);
 
         log.info("Callback. Simulated Exec Time {} ms.  Received args => {}. Returned {}. ", millisecondsWaitSimulation, integerList, stringList );
@@ -124,7 +124,7 @@ public class DelayedBatchExecutorTest {
         List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
         waitUntilFinishing(threadsAsFutures);
 
-        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
+        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
         Assert.assertEquals(CONCURRENT_THREADS, atomicIntegerCounter.get());
     }
 
@@ -170,7 +170,7 @@ public class DelayedBatchExecutorTest {
         List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
         waitUntilFinishing(threadsAsFutures);
 
-        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_DBE_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
+        sleepCurrentThread(MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK + 1000); // wait time to allow all Mono's threads to finish
         Assert.assertEquals(CONCURRENT_THREADS, atomicIntegerCounter.get());
     }
 

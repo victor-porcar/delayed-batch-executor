@@ -4,26 +4,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ExecutionResultFromCallback {
+public class CallBackExecutionResult {
     RuntimeException runtimeException;
     List resizedList;
 
-
-    public ExecutionResultFromCallback(List result, RuntimeException runtimeException, int size) {
+    public CallBackExecutionResult(List result, RuntimeException runtimeException, int size) {
         this.runtimeException = runtimeException;
         this.resizedList= resizeListFillingWithNullsIfNecessary(result, size);
     }
 
-    public boolean runtimeExceptionLaunched() {
-        return runtimeException!=null;
-    }
-
-    public RuntimeException getRuntimeException() {
+    public RuntimeException getThrownRuntimeExceptionOrNull() {
         return runtimeException;
     }
 
 
-    public Object getPositionResult(int position) {
+    public Object getReturnedResultOrNull(int position) {
         return resizedList.get(position);
     }
 
