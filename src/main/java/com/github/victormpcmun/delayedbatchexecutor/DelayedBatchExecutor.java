@@ -1,5 +1,6 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
@@ -7,38 +8,61 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
-abstract class DelayedBatchExecutor {
+public abstract class DelayedBatchExecutor {
+
+
+    private AtomicLong callBackExecutionsCounter = new AtomicLong(0);
+
+    private Duration usingDuration;
+    private Integer usingSize;
+
 
     private static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
     private static final int QUEUE_SIZE = 4096; // max elements queued
 
-    private final int size;
-    private final Duration windowTime;
+    private WindowTime windowTime;
 
-	private final UnicastProcessor<Tuple> source;
+	private  UnicastProcessor<Tuple> source;
     private Queue<Tuple> blockingQueue;
     private ExecutorService executorService;
 
-
-    protected DelayedBatchExecutor(Duration windowTime, int size) {
-       this(windowTime, size, Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER));
-    }
-
-
-    protected DelayedBatchExecutor(Duration windowTime, int size, ExecutorService executorService) {
+    protected DelayedBatchExecutor(WindowTime windowTime, ExecutorService executorService) {
         super();
-        DelayedBatchExecutorValidator.validateBoundaries(size, windowTime, executorService);
-        this.size = size;
+
+
         this.windowTime = windowTime;
         this.executorService = executorService;
 
-        this.blockingQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
-        this.source = UnicastProcessor.create(blockingQueue);
-        Flux<Tuple> flux = source.publish().autoConnect();
-        flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
+
+
+        windowTime.setDelayedBatchExecutor(this);
+        windowTime.startup();
+
     }
 
+
+    public void updateBufferedTimeoutFlux(Duration duration, int size) {
+        boolean sameDuration = this.usingDuration!=null && this.usingDuration.compareTo(duration)==0;
+        boolean sameSize = this.usingSize!=null && this.usingSize.compareTo(size)==0;
+        boolean sameParameters=sameDuration && sameSize;
+
+        if (!sameParameters) {
+            this.blockingQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
+            this.source  = UnicastProcessor.create(blockingQueue);
+            Flux<Tuple> flux = source.publish().autoConnect();
+            this.usingDuration=duration;
+            this.usingSize=size;
+            flux.bufferTimeout(size, duration).subscribe(this::executeList);
+        }
+
+
+    }
+
+    protected static ExecutorService getNewDefaultExecutorService() {
+        return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
+    }
 
     protected abstract List<Object> getResultListFromCallBack(List<List<Object>>  transposedTupleList);
 
@@ -59,7 +83,7 @@ abstract class DelayedBatchExecutor {
 
     private void executeList(List<Tuple> tupleList) {
         CompletableFuture.runAsync(() -> {
-
+            callBackExecutionsCounter.incrementAndGet();
             CallBackExecutionResult callBackExecutionResult = getExecutionResultFromCallback(tupleList);
 
             for (int index=0; index<tupleList.size(); index++) {
@@ -74,13 +98,17 @@ abstract class DelayedBatchExecutor {
 
 
    <Z> void enlistTuple(Tuple<Z> param) {
+        windowTime.invocation();
         source.onNext(param);
     }
 
 
     @Override
     public String toString() {
-        return "DelayedBulkExecutor [size=" + size + ", windowTime=" + windowTime + "]";
+        return "DelayedBatchExecutor {" +
+                " usingDuration=" + usingDuration.toMillis() +
+                ", usingSize=" + usingSize +
+                ", callBackExecutionsCounter=" + callBackExecutionsCounter +
+                "}";
     }
-
 }

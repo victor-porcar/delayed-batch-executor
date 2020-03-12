@@ -1,6 +1,7 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
 import com.github.victormpcmun.delayedbatchexecutor.callback.CallBack2;
+import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -65,7 +66,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the argument
-     * @param  windowTime  the time of the window time, defined as a {@link Duration }
+     * @param  duration  the time of the window time, defined as a {@link Duration }
      * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
      * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
      * @return  an instance of {@link DelayedBatchExecutor2}
@@ -73,8 +74,8 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      */
 
 
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, CallBack2<Z,A> callBack2) {
-        return new DelayedBatchExecutor2<>(windowTime, size, callBack2);
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, CallBack2<Z,A> callBack2) {
+        return new DelayedBatchExecutor2<>(FixWindowTime.create(duration, size), getNewDefaultExecutorService(), callBack2);
     }
 
 
@@ -84,24 +85,31 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the argument
-     * @param  windowTime  the time of the window time, defined as a {@link Duration }
+     * @param  duration  the time of the window time, defined as a {@link Duration }
      * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
      * @param  executorService to define the pool of threads to executed the callBack method in asynchronous mode
      * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
      * @return  an instance of {@link DelayedBatchExecutor2}
      *
      */
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, ExecutorService executorService, CallBack2<Z, A> callBack2) {
-        return new DelayedBatchExecutor2<>(windowTime, size, executorService, callBack2);
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, ExecutorService executorService, CallBack2<Z, A> callBack2) {
+        return new DelayedBatchExecutor2<>(FixWindowTime.create(duration, size), executorService, callBack2);
     }
 
-    private DelayedBatchExecutor2(Duration windowTime, int size, ExecutorService executorService, CallBack2 callback) {
-        super(windowTime, size, executorService);
-        this.callback = callback;
+
+
+    // TODO DOC
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(WindowTime windowTime, CallBack2<Z,A> callBack2) {
+        return new DelayedBatchExecutor2<>(windowTime, getNewDefaultExecutorService(), callBack2);
     }
 
-    private DelayedBatchExecutor2(Duration windowTime, int size,   CallBack2 callback) {
-        super(windowTime, size);
+    // TODO DOC
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(WindowTime windowTime, ExecutorService executorService, CallBack2<Z, A> callBack2) {
+        return new DelayedBatchExecutor2<>(windowTime, executorService, callBack2);
+    }
+
+    private DelayedBatchExecutor2(WindowTime windowTime, ExecutorService executorService, CallBack2 callback) {
+        super(windowTime, executorService);
         this.callback = callback;
     }
 
@@ -149,7 +157,6 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * @param  arg1 value of the first argument defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result (type Z)
      *
-     *d: The environment variable JAVA_HOME is not correctly set.
      */
     public Future<Z> executeAsFuture(A arg1) {
         TupleFuture<Z> tupleFuture = TupleFuture.create(arg1);

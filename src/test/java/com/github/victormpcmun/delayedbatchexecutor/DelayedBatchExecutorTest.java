@@ -1,5 +1,7 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import com.github.victormpcmun.delayedbatchexecutor.windowtime.DynamicWindowTime;
+import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -40,7 +42,7 @@ public class DelayedBatchExecutorTest {
         log.info("Callback. Simulated Exec Time {} ms.  Received args => {}. Returned {}. ", millisecondsWaitSimulation, integerList, stringList );
 
         // to force the test to fail, uncomment this:
-        //stringList.set(0,"UNEXPECTED");
+        // stringList.set(0,"UNEXPECTED");
         return stringList;
     }
 
@@ -201,6 +203,56 @@ public class DelayedBatchExecutorTest {
         List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
         waitUntilFinishing(threadsAsFutures);
     }
+
+
+
+    //----------------------------------------------------------------------------------------------------------------------
+
+
+
+    @Test
+    public void dynamicWindowTimeExecution() {
+         WindowTime dynamicWindowTime = DynamicWindowTime.create(Duration.ofMillis(200),10,10);
+        // WindowTime dynamicWindowTime = FixWindowTime.create(Duration.ofMillis(200),10);
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(dynamicWindowTime, integerList ->
+        {
+            List<String> stringList = new ArrayList<>();
+            for (Integer value: integerList) {
+                stringList.add(PREFIX+value);
+            }
+            return stringList;
+
+        });
+
+
+        Callable<Void> callable = () -> {
+
+            for (int i=1; i<100; i++) {
+                Integer randomIntegerUpTo1000 = getRandomIntegerFromInterval(1, 1000);
+
+
+                String expectedValue = PREFIX + randomIntegerUpTo1000; // the String returned by delayedBatchExecutorCallback for a given integer
+                String result = dbe2.execute(randomIntegerUpTo1000); // it will block until the result is available
+                Assert.assertEquals(result, expectedValue);
+                sleepCurrentThread(1000);
+            }
+            return null;
+        };
+
+
+        List<Future<Void>> threadsAsFutures = createThreads(90, callable);
+        waitUntilFinishing(threadsAsFutures);
+
+
+
+
+    }
+
+
+
+
+
+
 
 
     //-----------------------------------------------------------------------------------------------------------------------
