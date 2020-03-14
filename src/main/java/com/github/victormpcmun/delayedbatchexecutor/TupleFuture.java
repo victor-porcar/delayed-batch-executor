@@ -9,32 +9,27 @@ import java.util.concurrent.TimeoutException;
 
 class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
-    private Instant initInstant;
+    private final Instant initInstant;
     private Instant endInstant;
 
     public static <T> TupleFuture<T>  create(Object... argsAsArray) {
-        TupleFuture tupleFuture = new TupleFuture(argsAsArray);
+        TupleFuture<T> tupleFuture = new TupleFuture<T>(argsAsArray);
         return tupleFuture;
     }
-
 
     public Future<T> getFuture() {
         return this;
     }
-
 
     private TupleFuture(Object... argsAsArray) {
         super(argsAsArray);
         this.initInstant= Instant.now();
     }
 
-
     public void commitResult() {
         super.commitResult();
         this.endInstant= Instant.now();
     }
-
-
 
 
     @Override
@@ -50,8 +45,6 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
         }
     }
 
-
-
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
@@ -65,7 +58,7 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
     @Override
     public T get() throws InterruptedException, ExecutionException {
         try {
-            return get(0l);
+            return get(0L);
         } catch (TimeoutException te) {
             throw new RuntimeException("This RuntimeException should never thrown at this point.", te);
         }
@@ -81,18 +74,13 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
     private T get(long millisecondsWait) throws InterruptedException, ExecutionException, TimeoutException {
         synchronized (this) {
             if (!done) {
-
-                try {
-                    if (millisecondsWait==0L) {
-                        this.wait();
-                    } else {
-                        this.wait(millisecondsWait);
-                        if (!done) {
-                            throw new TimeoutException("can not get the result in " + millisecondsWait);
-                        }
+                if (millisecondsWait==0L) {
+                    this.wait();
+                } else {
+                    this.wait(millisecondsWait);
+                    if (!done) {
+                        throw new TimeoutException("can not get the result in " + millisecondsWait);
                     }
-                } catch (InterruptedException ie)  {
-                    throw ie;
                 }
             }
         }

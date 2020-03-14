@@ -9,19 +9,18 @@ import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-public abstract class DelayedBatchExecutor {
+abstract class DelayedBatchExecutor {
 
-    private AtomicLong invocationsCounter = new AtomicLong(0);
-    private AtomicLong callBackExecutionsCounter = new AtomicLong(0);
+    private static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
+    private static final int QUEUE_SIZE = 8192; // max elements queued
+
+    private final AtomicLong invocationsCounter = new AtomicLong(0);
+    private final AtomicLong callBackExecutionsCounter = new AtomicLong(0);
 
     private Duration duration;
     private Integer size;
 
-    private static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
-    private static final int QUEUE_SIZE = 4096; // max elements queued
-
 	private  UnicastProcessor<Tuple> source;
-    private Queue<Tuple> blockingQueue;
     private ExecutorService executorService;
 
     protected DelayedBatchExecutor(Duration duration, int size, ExecutorService executorService) {
@@ -29,11 +28,27 @@ public abstract class DelayedBatchExecutor {
         updateConfig(duration,size, executorService);
     }
 
-
+    /**
+     * Update the configuration params of this Delayed Batch Executor
+     * It could be invoked at anytime.
+     * <br>
+     * @param  duration  the new {@link Duration} for this Delayed Batch Executor
+     * @param  size  the new size
+     *
+     */
     public  void updateConfig(Duration duration, int size) {
         updateConfig(duration, size, executorService);
     }
 
+    /**
+     * Update the configuration params of this Delayed Batch Executor
+     * It could be invoked at anytime.
+     * <br>
+     * @param  duration  the new {@link Duration} for this Delayed Batch Executor
+     * @param  size  the new size
+     * @param  executorService  the new {@link ExecutorService}
+     *
+     */
     public synchronized void updateConfig(Duration duration, int size, ExecutorService executorService) {
         boolean sameDuration = this.duration!=null && this.duration.compareTo(duration)==0;
         boolean sameSize = this.size!=null && this.size.compareTo(size)==0;
@@ -46,7 +61,7 @@ public abstract class DelayedBatchExecutor {
             this.size=size;
             this.executorService=executorService;
 
-            this.blockingQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
+            Queue<Tuple> blockingQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
             this.source  = UnicastProcessor.create(blockingQueue);
             Flux<Tuple> flux = source.publish().autoConnect();
             flux.bufferTimeout(size, duration).subscribe(this::executeList);
@@ -54,12 +69,7 @@ public abstract class DelayedBatchExecutor {
 
     }
 
-    protected static ExecutorService getNewDefaultExecutorService() {
-        return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
-    }
-
     protected abstract List<Object> getResultListFromCallBack(List<List<Object>>  transposedTupleList);
-
 
     private CallBackExecutionResult getExecutionResultFromCallback(List<Tuple> tupleList) {
         List<Object> resultFromCallBack=null;
@@ -72,7 +82,6 @@ public abstract class DelayedBatchExecutor {
             runtimeException=re;
         }
         return new CallBackExecutionResult(resultFromCallBack, runtimeException, tupleList.size());
-
     }
 
     private void executeList(List<Tuple> tupleList) {
@@ -93,23 +102,49 @@ public abstract class DelayedBatchExecutor {
 
    <Z> void enlistTuple(Tuple<Z> param) {
        invocationsCounter.incrementAndGet();
-        source.onNext(param);
+       source.onNext(param);
     }
 
+
+
+    /**
+     * The count of invocations of all blocking, Future and Mono invocations since the creation of this Delayed Batch Executor
+     * @return  the count of invocations of all blocking, Future and Mono invocations since the creation of this Delayed Batch Executor
+     *
+     */
     public Long getInvocationsCounter() {
         return invocationsCounter.get();
     }
 
+    /**
+     * The count of executions of the batchCallBack method since the creation of this Delayed Batch Executor
+     * @return  the count of executions of the batchCallBack method since the creation of this Delayed Batch Executor
+     *
+     */
     public Long getCallBackExecutionsCounter() {
         return callBackExecutionsCounter.get();
     }
 
+    /**
+     * The current {@link Duration} of this Delayed Batch Executor
+     * @return  the current {@link Duration} of this Delayed Batch Executor
+     *
+     */
     public Duration getDuration() {
         return duration;
     }
 
+    /**
+     * The current size of this Delayed Batch Executor
+     * @return  the current size of this Delayed Batch Executor
+     *
+     */
     public Integer getSize() {
         return size;
+    }
+
+    protected static ExecutorService getNewDefaultExecutorService() {
+        return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
     }
 
     @Override

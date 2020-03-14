@@ -84,11 +84,11 @@ public class DelayedBatchExecutorTest {
             String result=null;
             try {
                 result=future.get();
+                log.info("futureTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+                Assert.assertEquals(result,  expectedValue);
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
-            log.info("futureTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
-            Assert.assertEquals(result,  expectedValue);
             return null;
         };
 
@@ -259,8 +259,8 @@ public class DelayedBatchExecutorTest {
             String result1=futureResult1.get();
             String result2=futureResult2.get();
 
-            long result1DelayedTime=((TupleFuture) futureResult1 ).getDelayedTime().toMillis();
-            long result2DelayedTime=((TupleFuture) futureResult2 ).getDelayedTime().toMillis();
+            long result1DelayedTime=((TupleFuture<String>) futureResult1 ).getDelayedTime().toMillis();
+            long result2DelayedTime=((TupleFuture<String>) futureResult2 ).getDelayedTime().toMillis();
 
             log.info("RESULT1 {} - DelayedTime: {}" , result1, result1DelayedTime);
             log.info("RESULT2 {} - DelayedTime: {}" , result2, result2DelayedTime);
@@ -281,10 +281,7 @@ public class DelayedBatchExecutorTest {
 
     @Test(expected = TimeoutException.class)
     public void futureTimeOutTest() throws InterruptedException, ExecutionException, TimeoutException {
-        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(Duration.ofMillis(2000), 2, resultList->
-        {
-            return new ArrayList<>();
-        });
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(Duration.ofMillis(2000), 2, resultList-> {return new ArrayList<>();});
 
         Future<String> futureResult1 = dbe2.executeAsFuture(1);
         futureResult1.get(1500, TimeUnit.MILLISECONDS);

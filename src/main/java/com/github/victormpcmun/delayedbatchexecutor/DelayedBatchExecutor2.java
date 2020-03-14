@@ -1,6 +1,6 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.callback.CallBack2;
+import com.github.victormpcmun.delayedbatchexecutor.callback.BatchCallBack2;
 
 import reactor.core.publisher.Mono;
 
@@ -11,45 +11,42 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * a Delayed Batch Executor for one argument (type A) and return type Z
- <br>
- <br>
- * Example:
- <br>
+ * Delayed Batch Executor for one argument of type A and return type Z
+ * <br>
  * <pre>
  * {@code
- *
- * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::myCallBack);
+ * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::myBatchCallback);
  *
  * ...
  *
- * public void logicUsingBlocking(String param1) {
+ * public void usingDelayedBatchExecutor(String param1) {
+ *
+ *    // using blocking behaviour
  *    Integer integerResult = dbe.execute(param1); // the thread will be blocked until the result is available
- *    // compute logic with integerResult
- * }
+ *    // compute with integerResult
  *
  *
- * public void logicUsingFuture(String param1) {
+ *    // using Future
  *    Future<Integer> resultAsFutureInteger = dbe.executeAsFuture(param1); // the thread will not  be blocked
  *    // computer something else
- *    Integer integerResult = resultAsFutureInteger.get();  // the thread will be blocked until the result is available (if it is not at the invocation time)
- *    // compute logic with integerResult
+ *    Integer integerResult = resultAsFutureInteger.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
+ *    // compute with integerResult
+ *
+ *
+ *    // using Mono
+ *    Mono<Integer> monoResult = dbe.executeAsMono(param1); // the thread will not  be blocked
+ *    // compute something else
+ *    monoResult.subscribe(integerResult -> {
+ *     // compute with integerResult
+ *    }
  * }
  *
+ * ...
  *
- * public void logicUsingMono(String param1) {
- *    Mono<Integer> resultAsMonoInteger = dbe.executeAsMono(param1); // the thread will not  be blocked
- *    resultAsMonoInteger.subscribe(integerResult -> {
- *      // compute logic with integerResult
- *    });
- * }
- *
- *
- *
- * List<Integer> myCallBack(List<String> arg1List) {
- *      List<Integer> result = ...
- *	    ...
- *      return result;
+ * List<Integer> myBatchCallback(List<String> arg1List) {
+ *   List<Integer> result = ...
+ *   ...
+ *   return result;
  *}
  *}
  * </pre>
@@ -59,64 +56,63 @@ import java.util.concurrent.Future;
 
 public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
-    private final CallBack2 callback;
+    private final BatchCallBack2<Z,A> batchCallBack;
 
     /**
-     * Factory method to create an instance of a Delayed Batch Executor for one argument (type A) and return type Z
+     * Factory method to create an instance of a Delayed Batch Executor for one argument of type A and return type Z
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the argument
-     * @param  duration  the time of the window time, defined as a {@link Duration }
-     * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
-     * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
+     * @param  duration  the time of the window time, defined as {@link Duration }.
+     * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
+     * @param  batchCallback2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack2})
      * @return  an instance of {@link DelayedBatchExecutor2}
      *
      */
 
 
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, CallBack2<Z,A> callBack2) {
-        return new DelayedBatchExecutor2<>(duration, size, getNewDefaultExecutorService(), callBack2);
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, BatchCallBack2<Z,A> batchCallback2) {
+        return new DelayedBatchExecutor2<>(duration, size, getNewDefaultExecutorService(), batchCallback2);
     }
-
 
 
     /**
-     * Factory method to create an instance of a Delayed Batch Executor for one argument (type A) and return type Z
+     * Factory method to create an instance of a Delayed Batch Executor for one argument of type A and return type Z
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the argument
-     * @param  duration  the time of the window time, defined as a {@link Duration }
-     * @param  size the max collected size.  As soon as  the number of collected parameters reaches this size, the callback method is executed
-     * @param  executorService to define the pool of threads to executed the callBack method in asynchronous mode
-     * @param  callBack2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link CallBack2})
+     * @param  duration  the time of the window time, defined as {@link Duration }.
+     * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
+     * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
+     * @param  batchCallback2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack2})
      * @return  an instance of {@link DelayedBatchExecutor2}
      *
      */
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, ExecutorService executorService, CallBack2<Z, A> callBack2) {
-        return new DelayedBatchExecutor2<>(duration, size, executorService, callBack2);
+
+    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, ExecutorService executorService, BatchCallBack2<Z, A> batchCallback2) {
+        return new DelayedBatchExecutor2<>(duration, size, executorService, batchCallback2);
     }
 
 
 
-    private DelayedBatchExecutor2(Duration duration, int size, ExecutorService executorService, CallBack2 callback) {
+    private DelayedBatchExecutor2(Duration duration, int size, ExecutorService executorService, BatchCallBack2<Z,A> batchCallBack) {
         super(duration, size , executorService);
-        this.callback = callback;
+        this.batchCallBack = batchCallBack;
     }
 
-
     /**
-     * Return the result of type Z, which is obtained from the returned list of the callback method for the given parameter.
+     * Return the result of type Z (blocking the thread until the result is available), which is obtained from the returned list of the batchCallBack method for the given parameter.
      * <br>
      * <br>
-     * It will throw any {@link RuntimeException} thrown inside of the  {@link CallBack2 }
+     * It will throw any {@link RuntimeException} thrown inside of the  {@link BatchCallBack2 }
      * <br>
      * <br>
-     * The invoking thread is blocked until the result is available as follows:
+     * The invoking thread is blocked until the result is available
      * <br>
      * <br>
-     * <img src="{@docRoot}/doc-files/blocking.svg" />
-     * @param  arg1 value of the first argument defined for this Delayed Batch Executor
-     * @return  the result (type Z)
+     * <img src="{@docRoot}/doc-files/blocking.svg" alt="blocking">
+     * @param  arg1 value of the first argument  for this Delayed Batch Executor
+     * @return  the result of type Z
      *
      *
      */
@@ -132,20 +128,21 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     }
 
     /**
-     * Return a {@link Future } containing the value obtained from the returned list of the callback method for the given parameter.
+     * Return a {@link Future } containing the corresponding value from the returned list of the batchCallBack method for the given parameter.
      * <br>
      * <br>
-     * The invoking thread is not blocked. The result will be available by invoking method {@link Future#get()} of the returned  {@link Future }, blocking the thread until the result is available if it wasn't.
+     * The invoking thread is not blocked. The result will be available by invoking method {@link Future#get()} of the returned  {@link Future }.
+     * It blocks the thread until the result is available if it wasn't.
      * <br>
      * <br>
-       * <img src="{@docRoot}/doc-files/future.svg" />
+       * <img src="{@docRoot}/doc-files/future.svg"  alt ="future">
      * <br>
      * <br>
-     * If  a {@link RuntimeException} is thrown inside of the  {@link CallBack2 }, then it will be the cause of the checked Exception  {@link ExecutionException}  thrown by  {@link Future#get()} as per contract of {@link Future#get()}
+     * If  a {@link RuntimeException} is thrown inside of the  {@link BatchCallBack2 }, then it will be the cause of the checked Exception  {@link ExecutionException}  thrown by  {@link Future#get()} as per contract of {@link Future#get()}
      * <br>
      * <br>
      * @param  arg1 value of the first argument defined for this Delayed Batch Executor
-     * @return  a {@link Future } for the result (type Z)
+     * @return  a {@link Future } for the result of type Z
      *
      */
     public Future<Z> executeAsFuture(A arg1) {
@@ -156,24 +153,24 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     }
 
     /**
-     * Return a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>} publishing the value obtained from the returned list of the callback method for the given parameter.
+     * Return a  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>, publishing the value obtained from the returned list of the batchCallBack method for the given parameter.
      * <br>
      * <br>
      * The invoking thread is not blocked
      * <br>
      * <br>
-     * <img src="{@docRoot}/doc-files/mono.svg" />
+     * <img src="{@docRoot}/doc-files/mono.svg"  alt="mono">
      * <br>
      * <br>
-     * If  a {@link RuntimeException} is thrown inside of the  {@link CallBack2 }, then it will be the propagated as any {@link Runtime } throw from a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>}
+     * If  a {@link RuntimeException} is thrown inside of the  {@link BatchCallBack2 }, then it will be the propagated as any {@link RuntimeException } throw from <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>
      * <br>
      * <br>
      * @param  arg1  value of the first argument defined for this Delayed Batch Executor
-     * @return  a {@link  <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>} for the result (type Z)
+     * @return  a <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a> for the result of type Z
      *
      *
      */
-    public <Z> Mono<Z> executeAsMono(A arg1) {
+    public Mono<Z> executeAsMono(A arg1) {
         TupleMono<Z> tupleMono = TupleMono.create(arg1);
         enlistTuple(tupleMono);
         Mono<Z> mono = tupleMono.getMono();
@@ -183,7 +180,9 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
     @Override
     protected  List<Object> getResultListFromCallBack(List<List<Object>> transposedTupleList) {
-        List<Object> resultList = callback.apply(transposedTupleList.get(0));
+        List<Object> resultList = (List<Object>) batchCallBack.apply(
+                (List<A>) transposedTupleList.get(0)
+        );
         return resultList;
     }
 }

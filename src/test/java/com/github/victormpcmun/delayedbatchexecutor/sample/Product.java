@@ -2,8 +2,8 @@ package com.github.victormpcmun.delayedbatchexecutor.sample;
 
 public class Product {
 
-    private Integer id;
-    private String description;
+    private final Integer id;
+    private final String description;
 
     public Integer getId() {
         return id;

@@ -1,8 +1,5 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import java.time.Duration;
-import java.time.Instant;
-
 abstract class Tuple<T>  {
 
     protected boolean done;

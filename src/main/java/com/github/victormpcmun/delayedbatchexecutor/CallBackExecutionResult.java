@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class CallBackExecutionResult {
-    RuntimeException runtimeException;
-    List resizedList;
+class CallBackExecutionResult {
+    final RuntimeException runtimeException;
+    final List<Object> resizedList;
 
-    public CallBackExecutionResult(List result, RuntimeException runtimeException, int size) {
+    public CallBackExecutionResult(List<Object> result, RuntimeException runtimeException, int desiredSize) {
         this.runtimeException = runtimeException;
-        this.resizedList= resizeListFillingWithNullsIfNecessary(result, size);
+        this.resizedList= resizeListFillingWithNullsIfNecessary(result, desiredSize);
     }
 
     public RuntimeException getThrownRuntimeExceptionOrNull() {
@@ -21,12 +21,12 @@ public class CallBackExecutionResult {
         return resizedList.get(position);
     }
 
-    private <T> List<T> resizeListFillingWithNullsIfNecessary(List<T> list, int size) {
+    private List<Object> resizeListFillingWithNullsIfNecessary(List<Object> list, int desiredSize) {
         if (list==null) {
-            list= Collections.nCopies(size,  null);
-        } else if (list.size()<size) {
+            list= Collections.nCopies(desiredSize,  null);
+        } else if (list.size()<desiredSize) {
             list = new ArrayList(list); // make it mutable in case it isn't
-            list.addAll(Collections.nCopies(size-list.size(),null));
+            list.addAll(Collections.nCopies(desiredSize-list.size(),null));
         }
         return list;
     }
