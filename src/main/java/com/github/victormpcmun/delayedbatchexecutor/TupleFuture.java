@@ -1,5 +1,6 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -24,15 +25,11 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
     @Override
     public T get() throws InterruptedException, ExecutionException {
-        synchronized (this) {
-            if (!done) {
-                this.wait();
-            }
+        try {
+            return get(0l);
+        } catch (TimeoutException te) {
+            throw (InterruptedException) te.getCause();
         }
-        if (hasRuntimeException()) {
-            throw new ExecutionException(getRuntimeException());
-        }
-        return result;
     }
 
     @Override
@@ -48,12 +45,7 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
         }
     }
 
-    @Override
-    public void commitResult() {
-        synchronized (this) {
-            this.done = true;
-        }
-    }
+
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -66,7 +58,35 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
+    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
+        long milliseconds =  (long) TimeUnit.MILLISECONDS.convert(timeout, unit);
+        try {
+            return get(milliseconds);
+        } catch (TimeoutException te) {
+            throw (InterruptedException) te.getCause();
+        }
+    }
+
+
+    private T get(long millisecondsWait) throws InterruptedException, ExecutionException, TimeoutException {
+        synchronized (this) {
+            if (!done) {
+                long initTime = Instant.now().toEpochMilli();
+                try {
+                    this.wait(millisecondsWait);
+                } catch (InterruptedException ie)  {
+                    long now = Instant.now().toEpochMilli();
+                    long difference = now - initTime;
+                    if (difference>=millisecondsWait) {
+                        throw new TimeoutException("can not get the result in " + difference);
+                    }
+                    throw ie;
+                }
+            }
+        }
+        if (hasRuntimeException()) {
+            throw new ExecutionException(getRuntimeException());
+        }
+        return result;
     }
 }

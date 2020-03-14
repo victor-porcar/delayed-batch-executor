@@ -1,7 +1,5 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.windowtime.DynamicWindowTime;
-import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -206,53 +204,79 @@ public class DelayedBatchExecutorTest {
 
 
 
-    //----------------------------------------------------------------------------------------------------------------------
 
-
-
-    @Test
-    public void dynamicWindowTimeExecution() {
-         WindowTime dynamicWindowTime = DynamicWindowTime.create(Duration.ofMillis(200),10,10);
-        // WindowTime dynamicWindowTime = FixWindowTime.create(Duration.ofMillis(200),10);
-        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(dynamicWindowTime, integerList ->
-        {
-            List<String> stringList = new ArrayList<>();
-            for (Integer value: integerList) {
-                stringList.add(PREFIX+value);
-            }
-            return stringList;
-
-        });
-
+    @Test(expected = TestRuntimeException.class)
+    public void changeConfigTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2LaunchingException = DelayedBatchExecutor2.define(DBE_DURATION, DBE_MAX_SIZE, integerList -> {throw new TestRuntimeException();});
 
         Callable<Void> callable = () -> {
+            Future<String> future = dbe2LaunchingException.executeAsFuture(1); // it will NOT block until the result is available
 
-            for (int i=1; i<100; i++) {
-                Integer randomIntegerUpTo1000 = getRandomIntegerFromInterval(1, 1000);
+            String result=null;
+            try {
+                result=future.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                RuntimeException actualRuntimeLaunched = (RuntimeException) e.getCause();
+                if (actualRuntimeLaunched instanceof TestRuntimeException) {
+                    log.info("futureExceptionTest=>It is capturing successfully the exception");
+                }
 
-
-                String expectedValue = PREFIX + randomIntegerUpTo1000; // the String returned by delayedBatchExecutorCallback for a given integer
-                String result = dbe2.execute(randomIntegerUpTo1000); // it will block until the result is available
-                Assert.assertEquals(result, expectedValue);
-                sleepCurrentThread(1000);
+                throw actualRuntimeLaunched;
             }
             return null;
         };
 
-
-        List<Future<Void>> threadsAsFutures = createThreads(90, callable);
+        List<Future<Void>> threadsAsFutures = createThreads(CONCURRENT_THREADS, callable);
         waitUntilFinishing(threadsAsFutures);
-
-
-
-
     }
 
 
 
 
+    @Test
+    public void changeConfigParam() {
 
+        int windowTime1=5;
+        int windowTime2=2;
+        int size=20;
 
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.define(Duration.ofSeconds(windowTime1), size, this::delayedBatchExecutorCallback);
+        log.info(dbe2.toString());
+
+        int value1=20;
+        int value2=40;
+
+        Future<String> futureResult1 = dbe2.executeAsFuture(value1);
+        log.info(dbe2.toString());
+        dbe2.updateConfig(Duration.ofSeconds(windowTime2), size+10);
+        log.info(dbe2.toString());
+        Future<String> futureResult2 = dbe2.executeAsFuture(value2);
+
+        try {
+
+            String result1=futureResult1.get();
+            String result2=futureResult2.get();
+
+            long result1DelayedTime=((Tuple) futureResult1 ).getDelayedTime().toMillis();
+            long result2DelayedTime=((Tuple) futureResult2 ).getDelayedTime().toMillis();
+
+            log.info("RESULT1 {} - DelayedTime: {}" , result1, result1DelayedTime);
+            log.info("RESULT2 {} - DelayedTime: {}" , result2, result2DelayedTime);
+
+            Assert.assertEquals(result1, PREFIX + value1);
+            Assert.assertEquals(result2, PREFIX + value2);
+
+            Assert.assertTrue(result1DelayedTime>windowTime1*1000);
+            Assert.assertTrue(result2DelayedTime>windowTime2*1000);
+
+            log.info(dbe2.toString());
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
     //-----------------------------------------------------------------------------------------------------------------------

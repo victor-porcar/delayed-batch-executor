@@ -1,5 +1,8 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import java.time.Duration;
+import java.time.Instant;
+
 abstract class Tuple<T>  {
 
     protected boolean done;
@@ -8,11 +11,16 @@ abstract class Tuple<T>  {
 
     protected RuntimeException runtimeException;
 
+    private Instant initInstant;
+    private Instant endInstant;
+
+
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
         this.done = false;
         this.argsAsArray = argsAsArray;
+        this.initInstant= Instant.now();
     }
 
     int getArgsSize() {
@@ -31,6 +39,7 @@ abstract class Tuple<T>  {
     public void commitResult() {
         synchronized (this) {
             this.done = true;
+            this.endInstant= Instant.now();
         }
     }
 
@@ -51,5 +60,9 @@ abstract class Tuple<T>  {
 
     public boolean hasRuntimeException() {
         return runtimeException!=null;
+    }
+
+    public Duration getDelayedTime() {
+        return Duration.between(initInstant,endInstant);
     }
 }

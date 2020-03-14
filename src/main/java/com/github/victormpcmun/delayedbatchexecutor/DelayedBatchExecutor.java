@@ -1,6 +1,5 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.UnicastProcessor;
 
@@ -12,51 +11,46 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class DelayedBatchExecutor {
 
-
+    private AtomicLong invocationsCounter = new AtomicLong(0);
     private AtomicLong callBackExecutionsCounter = new AtomicLong(0);
 
-    private Duration usingDuration;
-    private Integer usingSize;
-
+    private Duration duration;
+    private Integer size;
 
     private static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
     private static final int QUEUE_SIZE = 4096; // max elements queued
-
-    private WindowTime windowTime;
 
 	private  UnicastProcessor<Tuple> source;
     private Queue<Tuple> blockingQueue;
     private ExecutorService executorService;
 
-    protected DelayedBatchExecutor(WindowTime windowTime, ExecutorService executorService) {
+    protected DelayedBatchExecutor(Duration duration, int size, ExecutorService executorService) {
         super();
-
-
-        this.windowTime = windowTime;
-        this.executorService = executorService;
-
-
-
-        windowTime.setDelayedBatchExecutor(this);
-        windowTime.startup();
-
+        updateConfig(duration,size, executorService);
     }
 
 
-    public void updateBufferedTimeoutFlux(Duration duration, int size) {
-        boolean sameDuration = this.usingDuration!=null && this.usingDuration.compareTo(duration)==0;
-        boolean sameSize = this.usingSize!=null && this.usingSize.compareTo(size)==0;
-        boolean sameParameters=sameDuration && sameSize;
+    public  void updateConfig(Duration duration, int size) {
+        updateConfig(duration, size, executorService);
+    }
+
+    public synchronized void updateConfig(Duration duration, int size, ExecutorService executorService) {
+        boolean sameDuration = this.duration!=null && this.duration.compareTo(duration)==0;
+        boolean sameSize = this.size!=null && this.size.compareTo(size)==0;
+        boolean sameExecutorService = this.executorService!=null && this.executorService==executorService;
+        boolean sameParameters=sameDuration && sameSize && sameExecutorService;
 
         if (!sameParameters) {
+
+            this.duration=duration;
+            this.size=size;
+            this.executorService=executorService;
+
             this.blockingQueue =  new ArrayBlockingQueue<>(QUEUE_SIZE) ; // => https://github.com/reactor/reactor-core/issues/469
             this.source  = UnicastProcessor.create(blockingQueue);
             Flux<Tuple> flux = source.publish().autoConnect();
-            this.usingDuration=duration;
-            this.usingSize=size;
             flux.bufferTimeout(size, duration).subscribe(this::executeList);
         }
-
 
     }
 
@@ -82,6 +76,7 @@ public abstract class DelayedBatchExecutor {
     }
 
     private void executeList(List<Tuple> tupleList) {
+        callBackExecutionsCounter.incrementAndGet();
         CompletableFuture.runAsync(() -> {
             callBackExecutionsCounter.incrementAndGet();
             CallBackExecutionResult callBackExecutionResult = getExecutionResultFromCallback(tupleList);
@@ -96,19 +91,34 @@ public abstract class DelayedBatchExecutor {
          }, this.executorService);
     }
 
-
    <Z> void enlistTuple(Tuple<Z> param) {
-        windowTime.invocation();
+       invocationsCounter.incrementAndGet();
         source.onNext(param);
     }
 
+    public Long getInvocationsCounter() {
+        return invocationsCounter.get();
+    }
+
+    public Long getCallBackExecutionsCounter() {
+        return callBackExecutionsCounter.get();
+    }
+
+    public Duration getDuration() {
+        return duration;
+    }
+
+    public Integer getSize() {
+        return size;
+    }
 
     @Override
     public String toString() {
         return "DelayedBatchExecutor {" +
-                " usingDuration=" + usingDuration.toMillis() +
-                ", usingSize=" + usingSize +
+                "invocationsCounter=" + invocationsCounter +
                 ", callBackExecutionsCounter=" + callBackExecutionsCounter +
-                "}";
+                ", duration=" + duration.toMillis() +
+                ", size=" + size +
+                '}';
     }
 }

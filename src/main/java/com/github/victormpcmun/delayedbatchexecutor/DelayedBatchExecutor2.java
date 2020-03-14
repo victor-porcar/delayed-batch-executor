@@ -1,7 +1,7 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
 import com.github.victormpcmun.delayedbatchexecutor.callback.CallBack2;
-import com.github.victormpcmun.delayedbatchexecutor.windowtime.FixWindowTime;
+
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -75,7 +75,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
 
     public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, CallBack2<Z,A> callBack2) {
-        return new DelayedBatchExecutor2<>(FixWindowTime.create(duration, size), getNewDefaultExecutorService(), callBack2);
+        return new DelayedBatchExecutor2<>(duration, size, getNewDefaultExecutorService(), callBack2);
     }
 
 
@@ -93,23 +93,13 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      *
      */
     public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration duration, int size, ExecutorService executorService, CallBack2<Z, A> callBack2) {
-        return new DelayedBatchExecutor2<>(FixWindowTime.create(duration, size), executorService, callBack2);
+        return new DelayedBatchExecutor2<>(duration, size, executorService, callBack2);
     }
 
 
 
-    // TODO DOC
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(WindowTime windowTime, CallBack2<Z,A> callBack2) {
-        return new DelayedBatchExecutor2<>(windowTime, getNewDefaultExecutorService(), callBack2);
-    }
-
-    // TODO DOC
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(WindowTime windowTime, ExecutorService executorService, CallBack2<Z, A> callBack2) {
-        return new DelayedBatchExecutor2<>(windowTime, executorService, callBack2);
-    }
-
-    private DelayedBatchExecutor2(WindowTime windowTime, ExecutorService executorService, CallBack2 callback) {
-        super(windowTime, executorService);
+    private DelayedBatchExecutor2(Duration duration, int size, ExecutorService executorService, CallBack2 callback) {
+        super(duration, size , executorService);
         this.callback = callback;
     }
 
