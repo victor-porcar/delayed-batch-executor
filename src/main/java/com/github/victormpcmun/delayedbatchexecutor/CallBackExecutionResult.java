@@ -17,11 +17,9 @@ public class CallBackExecutionResult {
         return runtimeException;
     }
 
-
     public Object getReturnedResultOrNull(int position) {
         return resizedList.get(position);
     }
-
 
     private <T> List<T> resizeListFillingWithNullsIfNecessary(List<T> list, int size) {
         if (list==null) {

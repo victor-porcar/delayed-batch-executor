@@ -11,16 +11,12 @@ abstract class Tuple<T>  {
 
     protected RuntimeException runtimeException;
 
-    private Instant initInstant;
-    private Instant endInstant;
-
-
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
         this.done = false;
         this.argsAsArray = argsAsArray;
-        this.initInstant= Instant.now();
+
     }
 
     int getArgsSize() {
@@ -39,7 +35,6 @@ abstract class Tuple<T>  {
     public void commitResult() {
         synchronized (this) {
             this.done = true;
-            this.endInstant= Instant.now();
         }
     }
 
@@ -62,7 +57,4 @@ abstract class Tuple<T>  {
         return runtimeException!=null;
     }
 
-    public Duration getDelayedTime() {
-        return Duration.between(initInstant,endInstant);
-    }
 }

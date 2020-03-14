@@ -1,5 +1,6 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -7,6 +8,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 class TupleFuture<T> extends Tuple<T> implements Future<T> {
+
+    private Instant initInstant;
+    private Instant endInstant;
 
     public static <T> TupleFuture<T>  create(Object... argsAsArray) {
         TupleFuture tupleFuture = new TupleFuture(argsAsArray);
@@ -21,16 +25,17 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
     private TupleFuture(Object... argsAsArray) {
         super(argsAsArray);
+        this.initInstant= Instant.now();
     }
 
-    @Override
-    public T get() throws InterruptedException, ExecutionException {
-        try {
-            return get(0l);
-        } catch (TimeoutException te) {
-            throw (InterruptedException) te.getCause();
-        }
+
+    public void commitResult() {
+        super.commitResult();
+        this.endInstant= Instant.now();
     }
+
+
+
 
     @Override
     public boolean isDone() {
@@ -58,28 +63,35 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException {
-        long milliseconds =  (long) TimeUnit.MILLISECONDS.convert(timeout, unit);
+    public T get() throws InterruptedException, ExecutionException {
         try {
-            return get(milliseconds);
+            return get(0l);
         } catch (TimeoutException te) {
-            throw (InterruptedException) te.getCause();
+            throw new RuntimeException("This RuntimeException should never thrown at this point.", te);
         }
+    }
+
+    @Override
+    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        long milliseconds =  TimeUnit.MILLISECONDS.convert(timeout, unit);
+        return get(milliseconds);
     }
 
 
     private T get(long millisecondsWait) throws InterruptedException, ExecutionException, TimeoutException {
         synchronized (this) {
             if (!done) {
-                long initTime = Instant.now().toEpochMilli();
+
                 try {
-                    this.wait(millisecondsWait);
-                } catch (InterruptedException ie)  {
-                    long now = Instant.now().toEpochMilli();
-                    long difference = now - initTime;
-                    if (difference>=millisecondsWait) {
-                        throw new TimeoutException("can not get the result in " + difference);
+                    if (millisecondsWait==0L) {
+                        this.wait();
+                    } else {
+                        this.wait(millisecondsWait);
+                        if (!done) {
+                            throw new TimeoutException("can not get the result in " + millisecondsWait);
+                        }
                     }
+                } catch (InterruptedException ie)  {
                     throw ie;
                 }
             }
@@ -88,5 +100,9 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
             throw new ExecutionException(getRuntimeException());
         }
         return result;
+    }
+
+    public Duration getDelayedTime() {
+        return Duration.between(initInstant,endInstant);
     }
 }
