@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-class CallBackExecutionResult {
+class BatchCallBackExecutionResult {
     final RuntimeException runtimeException;
     final List<Object> resizedList;
 
-    public CallBackExecutionResult(List<Object> result, RuntimeException runtimeException, int desiredSize) {
+    public BatchCallBackExecutionResult(List<Object> result, RuntimeException runtimeException, int desiredSize) {
         this.runtimeException = runtimeException;
         this.resizedList= resizeListFillingWithNullsIfNecessary(result, desiredSize);
     }

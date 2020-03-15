@@ -39,7 +39,6 @@ abstract class Tuple<T>  {
         return done;
     }
 
-
     public abstract void continueIfIsWaiting();
 
     public RuntimeException getRuntimeException() {
@@ -53,5 +52,4 @@ abstract class Tuple<T>  {
     public boolean hasRuntimeException() {
         return runtimeException!=null;
     }
-
 }
