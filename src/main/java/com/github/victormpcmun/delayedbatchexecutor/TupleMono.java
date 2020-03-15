@@ -34,7 +34,7 @@ class TupleMono<T> extends Tuple<T> {
         }
     }
 
-    public void whileUntilSinkIsSet() {
+    private void whileUntilSinkIsSet() {
         int counterIteration = ITERATIONS_TO_WAIT_SET_SINK;
         while (monoSink == null && counterIteration > 0) {
             try {
