@@ -18,7 +18,7 @@ public class ProductDAO {
     public static final ProductDAO productDAOSingleton = new ProductDAO();
 
     private final DelayedBatchExecutor2<Product, Integer> delayedBatchExecutorProductById =
-                   DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
+                   DelayedBatchExecutor2.create(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
 
 
     public Product getProductById(Integer productId) {
