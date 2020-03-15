@@ -36,7 +36,8 @@ abstract class DelayedBatchExecutor {
     }
 
     /**
-     * Update the Duration and maxSize params of this Delayed Batch Executor, keeping the executorService and bufferQueueSize
+     * Update the Duration and maxSize params of this Delayed Batch Executor, keeping the current executorService and bufferQueueSize
+     * <br>
      * <br>
      * This method is thread safe
      * <br>
@@ -50,14 +51,15 @@ abstract class DelayedBatchExecutor {
     }
 
     /**
-     * Update the Duration, maxsize and ExecutorService params of this Delayed Batch Executor
+     * Update the Duration, maxsize, ExecutorService  and bufferQueueSize params of this Delayed Batch Executor
+     * <br>
      * <br>
      * This method is thread safe
      * <br>
      * @param  duration  the new {@link Duration} for this Delayed Batch Executor
      * @param  maxSize  the new maxsize  for this Delayed Batch Executor
      * @param  executorService the new {@link ExecutorService} for this Delayed Batch Executor
-     * @param  bufferQueueSize max size of the internal queue to store values
+     * @param  bufferQueueSize max size of the internal queue to buffer values
      * @return  true if the configuration was successful updated, false otherwise
      *
      */
@@ -78,7 +80,7 @@ abstract class DelayedBatchExecutor {
     }
 
     /**
-     * The count of invocations of all blocking, Future and Mono invocations since the creation of this Delayed Batch Executor
+     * The count of invocations of all of the execute methods of this Delayed Batch Executor: execute(...), executeAsFuture(...) or executeAsMono(...) since the creation of this Delayed Batch Executor
      * @return  the count of invocations of all blocking, Future and Mono invocations since the creation of this Delayed Batch Executor
      *
      */
@@ -114,8 +116,8 @@ abstract class DelayedBatchExecutor {
     }
 
     /**
-     * The current max size of the internal queue to store values
-     * @return  the current max size of the internal queue to store values
+     * The current max size of the internal queue to buffer values
+     * @return  the current max size of the internal queue to buffer values
      *
      */
     public Integer getBufferQueueSize() {

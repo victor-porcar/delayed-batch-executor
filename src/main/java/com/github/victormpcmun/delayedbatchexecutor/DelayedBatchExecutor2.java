@@ -15,7 +15,7 @@ import java.util.concurrent.Future;
  * <br>
  * <pre>
  * {@code
- * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::myBatchCallback);
+ * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 10, this::myBatchCallback);
  *
  * ...
  *
@@ -65,7 +65,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * Factory method to create an instance of a Delayed Batch Executor for one argument of type A and return type Z
      * <br>
      * <br>
-     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads {@value #DEFAULT_FIXED_THREAD_POOL_COUNTER}
+     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value #DEFAULT_FIXED_THREAD_POOL_COUNTER}
      * <br>
      * -It uses as a default bufferQueueSize value {@value #DEFAULT_BUFFER_QUEUE_SIZE}
      * <br>
@@ -92,7 +92,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * @param  duration  the time of the window time, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
-     * @param  bufferQueueSize max size of the internal queue to store values.
+     * @param  bufferQueueSize max size of the internal queue to buffer values.
      * @param  batchCallback2 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack2})
      * @return  an instance of {@link DelayedBatchExecutor2}
      *
@@ -110,18 +110,16 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     }
 
     /**
-     * Return the result of type Z (blocking the thread until the result is available), which is obtained from the returned list of the batchCallBack method for the given parameter.
+     * Return the result of type Z (blocking the thread until the result is available), which is obtained from the returned list of the batchCallBack method for the given argument
      * <br>
      * <br>
      * It will throw any {@link RuntimeException} thrown inside of the  {@link BatchCallBack2 }
      * <br>
      * It will throw a {@link RuntimeException} if the internal buffer Queue of this Delayed Batch Executor is full.
      * <br>
-     * The invoking thread is blocked until the result is available
-     * <br>
      * <br>
      * <img src="{@docRoot}/doc-files/blocking.svg" alt="blocking">
-     * @param  arg1 value of the first argument  for this Delayed Batch Executor
+     * @param  arg1 value of the argument of type A defined for this Delayed Batch Executor
      * @return  the result of type Z
      *
      *
@@ -138,11 +136,10 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
     }
 
     /**
-     * Return a {@link Future } containing the corresponding value from the returned list of the batchCallBack method for the given parameter.
+     * Return a {@link Future } containing the corresponding value from the returned list of the batchCallBack method for the given argument
      * <br>
      * <br>
-     * The invoking thread is not blocked. The result will be available by invoking method {@link Future#get()} of the returned  {@link Future }.
-     * It blocks the thread until the result is available if it wasn't.
+     * The invoking thread is not blocked. The result will be available by invoking method {@link Future#get()} of the {@link Future }. This method will block the thread until the result is available
      * <br>
      * <br>
        * <img src="{@docRoot}/doc-files/future.svg"  alt ="future">
@@ -152,7 +149,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * If  a {@link RuntimeException} is thrown inside of the  {@link BatchCallBack2 }, then it will be the cause of the checked Exception  {@link ExecutionException}  thrown by  {@link Future#get()} as per contract of {@link Future#get()}
      * <br>
      * <br>
-     * @param  arg1 value of the first argument defined for this Delayed Batch Executor
+     * @param  arg1 value of the argument of type A defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result of type Z
      *
      */
@@ -177,7 +174,7 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
      * If  a {@link RuntimeException} is thrown inside of the  {@link BatchCallBack2 }, then it will be the propagated as any {@link RuntimeException } thrown from <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a>
      * <br>
      * <br>
-     * @param  arg1  value of the first argument defined for this Delayed Batch Executor
+     * @param arg1 value of the argument of type A defined for this Delayed Batch Executor
      * @return  a <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a> for the result of type Z
      *
      *
