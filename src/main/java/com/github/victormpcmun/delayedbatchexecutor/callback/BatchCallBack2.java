@@ -5,13 +5,14 @@ import java.util.List;
 /**
  * Receive as argument a List of type A and returns a List of type Z. It can be implemented as a lambda expression or method reference
  * <br>
+ * <br>
  * <pre>
  * <b>Lambda expression</b>
  * {@code
- * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, arg1List ->
+ * DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, arg1List ->
  * {
- *      //arg1List is a List<String>
- *      List<Integer> result = ...
+ *      //arg1List is a List<Integer>
+ *      List<String> result = ...
  *	    ...
  *      return result;
  *});
@@ -20,8 +21,8 @@ import java.util.List;
  * {@code
  * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.define(Duration.ofMillis(50), 10, this::myBatchCallBack);
  * ...
- * List<Integer> myBatchCallBack(List<String> arg1List) {
- *      List<Integer> result = ...
+ * List<String> myBatchCallBack(List<Integer> arg1List) {
+ *      List<String> result = ...
  *	    ...
  *      return result;
  *}
