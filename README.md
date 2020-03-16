@@ -58,32 +58,32 @@ a DelayedBatchExecutor is defined by three parameters:
 	
   Let's define a DelayedBatchExecutor for a window time = 200 milliseconds and a max size = 20 elements 
   
-  #### using a lambda 
+  #### Using a lambda 
 ```java
-  DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
-  {
-		List<String>  resultList = ...// execute query:SELECT * FROM TABLE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
-                                      // using your favourite API: JDBC, JPA, Hibernate.
-		...
-		return resultList;
+DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
+{
+  List<String>  resultList = ...// execute query:SELECT * FROM TABLE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+                                // using your favourite API: JDBC, JPA, Hibernate
+  ...
+  return resultList;
   
-  });
+ });
   ``` 
   
-  #### using a method reference
+  #### Using a method reference
   
  
   ```java
-  DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
+DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
   
+...
+  
+List<String> myBatchCallBack(List<Integer> listOfIntegers) {
+  List<String>  resultList = ...// execute query:SELECT * FROM TABKE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+                                // using your favourite API: JDBC, JPA, Hibernate.
   ...
-  
-  List<String> myBatchCallBack(List<Integer> listOfIntegers) {
-		List<String>  resultList = ...// execute query:SELECT * FROM TABKE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
-                                      // using your favourite API: JDBC, JPA, Hibernate.
-		...
-		return resultList;
-  }
+  return resultList;
+}
 ``` 
 
 There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
