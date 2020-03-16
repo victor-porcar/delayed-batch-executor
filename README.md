@@ -52,9 +52,9 @@ A DelayedBatchExecutor is defined by three parameters:
     - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...)
 
 	
-  Let's define a DelayedBatchExecutor for a window time = 200 milliseconds and a max size = 20 elements 
+  Let's define a DelayedBatchExecutor(*1)  for a window time = 200 milliseconds and a max size = 20 elements 
   
-  #### Using a Lambda 
+  #### Using a Lambda batchCallback
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -66,7 +66,7 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
  });
   ``` 
   
-  #### Using a Method reference
+  #### Using a Method Reference batchCallback
   
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
@@ -133,3 +133,9 @@ DelayeBatchExecutor implement this policy using  method executeAsMono(...), it
 The following diagram depicts how Reactive policy works:
 
 ![Reactive image](/src/main/javadoc/doc-files/future.svg)
+
+--
+(*1) The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
+
+for a DelayedBatchExecutor for two parameter (Integer and Date) and returning type a Srring, the definition would be
+DelayedBatchExecutor3<String,Integer,Date> and so on...
