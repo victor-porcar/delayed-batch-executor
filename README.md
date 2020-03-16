@@ -104,7 +104,7 @@ The following diagram depicts how blocking policy works:
 
 #### Future (non blocking)
 
-DelayeBatchExecutor implement this policy using the method executeAsFuture(...)
+DelayeBatchExecutor implement this policy using the method `executeAsFuture(...)`
 
 	int param = ...;
     // using Future
@@ -121,7 +121,7 @@ The following diagram depicts how Future policy works:
 
 #### Reactive (by using reactor.core.publisher.Mono of Reactor):
  
-DelayeBatchExecutor implement this policy using  method executeAsMono(...), it 
+DelayeBatchExecutor implement this policy using  method `executeAsMono(...)` it 
 
      // using Mono
     Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
@@ -134,7 +134,7 @@ The following diagram depicts how Reactive policy works:
 
 ![Reactive image](/src/main/javadoc/doc-files/future.svg)
 
---
+-----
 (*1) The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
 
 for a DelayedBatchExecutor for two parameter (Integer and Date) and returning type a Srring, the definition would be
