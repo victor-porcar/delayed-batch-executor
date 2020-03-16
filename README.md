@@ -58,7 +58,7 @@ a DelayedBatchExecutor is defined by three parameters:
 	
   Let's define a DelayedBatchExecutor for a window time = 200 milliseconds and a max size = 20 elements 
   
-  #### Using a lambda 
+  #### Using a Lambda 
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -70,9 +70,8 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
  });
   ``` 
   
-  #### Using a method reference
+  #### Using a Method reference
   
- 
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
   
@@ -92,18 +91,19 @@ There are three policies to use a DelayedBatchExecutor from the code being execu
 
 #### Blocking
 
-DelayeBatchExecutor implement this policy using the method execute(...)
+DelayeBatchExecutor implement this policy using the method `execute(...)`
 The thread is blocked until the result is available
-
-	int param = ...;
+ 
+```java 
+    int param = ...;
 	...
     // using blocking behaviour
     String result = dbe.execute(param1); // the thread will be blocked until the result is available
     // compute with result
-
+```
 The following diagram depicts how blocking policy works:
 
-
+![Blocking image](/src/main/javadoc/doc-files/blocking.svg)
 
 
 #### Future (non blocking)
@@ -119,6 +119,9 @@ DelayeBatchExecutor implement this policy using the method executeAsFuture(...)
 
 The following diagram depicts how Future policy works:
 
+![Future image](/src/main/javadoc/doc-files/future.svg)
+
+
 
 #### Reactive (by using reactor.core.publisher.Mono of Reactor):
  
@@ -132,3 +135,5 @@ DelayeBatchExecutor implement this policy using  method executeAsMono(...), it
     }
 	
 The following diagram depicts how Reactive policy works:
+
+![Reactive image](/src/main/javadoc/doc-files/future.svg)
