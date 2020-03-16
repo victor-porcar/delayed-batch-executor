@@ -9,7 +9,7 @@ import java.util.List;
  * <pre>
  * <b>Lambda expression</b>
  * {@code
- * DelayedBatchExecutor3<String,Integer> dbe = DelayedBatchExecutor3.define(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
+ * DelayedBatchExecutor3<String,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
  * {
  *      //arg1List and arg2List are List<Integer>
  *      List<String> result = ...
@@ -19,7 +19,7 @@ import java.util.List;
  *}
  * <b>Method reference</b>
  * {@code
- * DelayedBatchExecutor3<String,Integer,Integer> dbe = DelayedBatchExecutor3.define(Duration.ofMillis(50), 10, this::myBatchCallBack);
+ * DelayedBatchExecutor3<String,Integer,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
  * ...
  * List<String> myBatchCallBack(List<Integer> arg1List, List<Integer> arg2List) {
  *      List<String> result = ...
