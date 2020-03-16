@@ -42,17 +42,13 @@ In short, it is much more efficient executing 1 query of n parameters than n que
 
 It basically works by creating window times where the indivual parameters of the queries are collected in a list, as soon as the window time finishes, the list is passed (via callback)  to a  method that executes one query with  all the parameters in the list and returns a list with the results. Each thread receives their corresponding result.
 
-
-In order to use it, use the following dependencies: 
-<<-->>
-
-a DelayedBatchExecutor is defined by three parameters:
+A DelayedBatchExecutor is defined by three parameters:
  
  * WindowTime: defined as java.time.Duration
  * max size: it is the max number of items to be collected in the list
  * batchCallback:
     - It can be implemented as a lambda expression or method reference: it receives a list of parameters and must return a list of values
-	- It is invoked automatically as soon as the WindowTime is finished OR the collection list is full 
+    - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full 
     - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...)
 
 	
