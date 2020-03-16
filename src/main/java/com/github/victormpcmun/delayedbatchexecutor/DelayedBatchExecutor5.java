@@ -161,7 +161,7 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
      * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
      * @return  the result of type Z
      *
      *
@@ -194,7 +194,7 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
      * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result of type Z
      *
      */
@@ -222,7 +222,7 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
      * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
      * @return  a <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a> for the result of type Z
      *
      *
