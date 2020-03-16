@@ -1,7 +1,5 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.callback.BatchCallBack2;
-
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -58,6 +56,42 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
 
     public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = DelayedBatchExecutor.DEFAULT_FIXED_THREAD_POOL_COUNTER; // this definitions is redundant, but javadoc seems to require it
     public static final int DEFAULT_BUFFER_QUEUE_SIZE = DelayedBatchExecutor.DEFAULT_BUFFER_QUEUE_SIZE; // this definitions is redundant, but javadoc seems to require it
+
+
+
+    /**
+     * Receive as argument a List of type A and returns a List of type Z. It can be implemented as a lambda expression or method reference
+     * <br>
+     * <br>
+     * <pre>
+     * <b>Lambda expression</b>
+     * {@code
+     * DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 10, arg1List ->
+     * {
+     *      //arg1List is a List<Integer>
+     *      List<String> result = ...
+     *	    ...
+     *      return result;
+     *});
+     *}
+     * <b>Method reference</b>
+     * {@code
+     * DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
+     * ...
+     * List<String> myBatchCallBack(List<Integer> arg1List) {
+     *      List<String> result = ...
+     *	    ...
+     *      return result;
+     *}
+     *}
+     * </pre>
+     * @author Victor Porcar
+     *
+     */
+    @FunctionalInterface
+    public interface BatchCallBack2<Z,A> {
+        List<Z> apply(List<A> firstParam);
+    }
 
     private final BatchCallBack2<Z,A> batchCallBack;
 
