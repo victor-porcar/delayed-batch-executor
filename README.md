@@ -1,204 +1,134 @@
-# Table of Contents
-1. [Introduction: Optimizing Data Repositories Usage in Java Multithreaded Applications](#introduction)
-2. [User Guide](#userguide)
-    1. [Blocking Behaviour](#blockingbehaviour)
-    2. [Non-Blocking Behaviour](#notblockingbehaviour)
 
+ ## Introduction
+ 
+ I described a simple mechanism called DelayedBatchExecutor in my post [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) to decrease the number of required queries in multithreaded applications by batching them. 
+ 
+ While this mechanism works well, it does block the invoking thread for a interval of time, which is not optimal in some cases. I have released a new version of DelayedBatchExecutor that includes non blocking behaviour in two ways:
 
-## Introduction: Optimizing Data Repositories Usage in Java Multithreaded Applications <a name="introduction"></a>
+- using Futures (java.util.concurrent.Future) 
+- using Reactive programming (Reactor framework)
 
-Data repositories are often the bottleneck of highly demanding system when the number of queries being executed is large.
-DelayedBatchExecutor is a component to decrease the number of required queries by batching them in Java Multithreaded Applications.
+## Rationale behind DelayeBatchExecutor
 
+There are several scenarios in which concurrent threads execute the same query to a database at almost the same time, which means that the same query (with different argument) may be executed many times within a short interval of time if the number of concurrent threads is high. 
 
-#### n queries of 1 parameter vs 1 query of n parameters
+For example, a REST endpoint that is massively hit (tens or hundreds hits per second) in which it is required to execute a query to retrieve an entity by a different resourceId. Another typical scenario is a  messaging listener that consumes tens or hundreds of messages per second and requires for each one to retrieve a row from a table by a different id.
 
-Let's assume a Java application that executes a query to a relational database to retrieve a Product entity (row) given its unique identifier (id).
-
-The query would look like something like this:
+In all these cases, the database is executing many times the same query (with different argument), like this one:
+```sql
+SELECT * FROM TABLE WHERE ID   = <Id1>
+SELECT * FROM TABLE WHERE ID   = <Id2>
+...
+SELECT * FROM TABLE WHERE ID   = <Idn>
+```
+As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to "convert" these n executions of one query with one parameter in  one query with n parameters:
 
 ```sql
-SELECT * FROM PRODUCT WHERE ID  = <productId>
+SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
 ```
-Now, to retrieve n Products there are two ways to proceed:
 
-* Execute n independent queries of one parameter:
-```sql
-SELECT * FROM PRODUCT WHERE ID   = <productId1>
-SELECT * FROM PRODUCT WHERE ID   = <productId2>
-...
-SELECT * FROM PRODUCT WHERE ID   = <productIdn>
-```
-* Execute one query of n parameters to retrieve n Products at the same time using the IN operator or a concatenation of ORs
+The advantages of executing one query with n parameters instead of n queries of 1 argument are the following:
 
-```sql
---  Example using IN OPERATOR
-SELECT * FROM PRODUCT WHERE ID IN (<productId1>, <productId2>, ..., <productIdn>)
-```
-The latter is more efficient in terms of network traffic and database server resources (CPU and Disk) because:
-* The number of round-trips to the database is 1 instead of n.
-* The database engine optimizes its data traversal process for n parameters, i.e, it may require only one scan per table instead of n.
+* The usage of network resources is reduced dramatically: The number of round-trips to the database is 1 instead of n.
 
-That is not only true for SELECT operations but also for other operations such as INSERTs, UPDATEs and DELETEs as well, in fact, JDBC API includes batch operations for these operations.
+* Database optimizer: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time and execution plan of 1 query of n parameters versus n queries of 1 parameter.
 
-The same applies to NoSQL repositories, most of them provide BULK operations explicitly.
+* The usage of database connections from the application pool is reduced: there more available connections overall, which means less waiting time for a connection.
 
-#### DelayedBatchExecutor
+In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter.
 
-Java applications like REST Microservices or Asynchronous Message Processors that require retrieving data from the database are usually implemented as Multithreaded applications (\*1) where:
 
- - Each thread executes the same query at some point of its execution (each query with a different parameter).
- - The number of concurrent threads is high (tens or hundreds per second).
+### DelayedBatchExecutor in detail
 
-In this scenario, it is highly likely that the database executes the same query many times within a short interval of time.
+It basically works by creating window times where the indivual parameters of the queries are collected in a list, as soon as the window time finishes, the list is passed (via callback)  to a  method that executes one query with  all the parameters in the list and returns a list with the results. Each thread receives their corresponding result.
 
-If these n queries of 1 parameter were replaced with a single equivalent one with n parameters, as pointed out before, the application would use less database server and network resources.
 
-The good news is that it can be achieved by a mechanism involving *time windows* as follows:
+In order to use it, use the following dependencies: 
+<<-->>
 
-A *time window* is opened by the first thread that tries to execute the query, so its parameter is stored in a list and that thread is paused. The rest of the threads that execute the same query within the *time window* get their parameters added to the list and they are paused as well. At this point no query has been executed on the database.
+a DelayedBatchExecutor is defined by three parameters:
+ 
+ * WindowTime: defined as java.time.Duration
+ * max size: it is the max number of items to be collected in the list
+ * batchCallback:
+    - It can be implemented as a lambda expression or method reference: it receives a list of parameters and must return a list of values
+	- It is invoked automatically as soon as the WindowTime is finished OR the collection list is full 
+    - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...)
 
-As soon as the time window is finished, or the list is full (a *maximum capacity* limit is previously defined), then a single query is executed with all the parameters stored in the list. Finally, once the result of this query is provided by the database, each thread receives its corresponding result and all the threads are resumed automatically.
-
-I've built a simple and light implementation of this mechanism for myself (DelayedBatchExecutor), which is easy to use in new or existing applications. It is based on the Reactive library *Reactor* and it uses a *Flux* buffered publisher with timeout for the list of parameters .
-
-#### Throughput and Latency analysis using DelayedBatchExecutor
-
-Let's assume a Rest Microservice for Products that exposes an endpoint for retrieving a Product given its productId.
-Without DelayedBatchExecutor, if there are say 200 hits per second to the endpoint, the database executes 200 queries per second.
-If the endpoint were using a DelayedBatchExecutor configured with a *time window* of 50 ms and *maximum capacity*=10 parameters, the database would execute ONLY 20 queries of 10 parameters each per second at the cost of increasing the latency at most in 50 ms (\*2) for each thread execution.
-
-In other words, for the price of increasing the latency by 50 ms(\*2), the database receives 10 times less queries per second while keeping the overall throughput of the system... Not bad!!.
-Other interesting configurations:
-
-* *window time*=100 ms, *max capacity*=20 parameters &rarr; 10 queries of 20 parameters (20 times less queries)
-* *window time*=500 ms, *max capacity*=100 parameters &rarr; 2 queries of 100 parameters (100 times less queries)
-
-#### DelayedBatchExecutor in Action
-
-Digging deeper in the Product Microservice example, let's assume that for each incoming HTTP request, the controller of the Microservice requires retrieving a Product (java bean) giving its id, so it invokes the method:
-
-`public Product getProductById(Integer productId)`
-
-of a DAO component (ProductDAO).
-
-Let's have a look to the implementation of this DAO without and with DelayedBatchExecutor.
-
-##### Without DelayedBatchExecutor
-
+	
+  Let's define a DelayedBatchExecutor for a window time = 200 milliseconds and a max size = 20 elements 
+  
+  #### using a lambda 
 ```java
-public class ProductDAO {
+  DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
+  {
+		List<String>  resultList = ...// execute query:SELECT * FROM TABLE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+                                      // using your favourite API: JDBC, JPA, Hibernate.
+		...
+		return resultList;
+  
+  });
+  ``` 
+  
+  #### using a method reference
+  
+ 
+  ```java
+  DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
+  
+  ...
+  
+  List<String> myBatchCallBack(List<Integer> listOfIntegers) {
+		List<String>  resultList = ...// execute query:SELECT * FROM TABKE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+                                      // using your favourite API: JDBC, JPA, Hibernate.
+		...
+		return resultList;
+  }
+``` 
 
- public Product getProductById(Integer id) {
-   Product product= ...// execute the query SELECT * FROM PRODUCT WHERE ID=<id>
-                       // using your favourite API: JDBC, JPA, Hibernate...
-   return product;
- }
+There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
 
- ...
 
-}
-```
-##### With DelayedBatchExecutor
 
-```java
-// assure this DAO is singleton
-public class ProductDAO {
+#### Blocking
 
- DelayedBatchExecutor2<Product, Integer> delayedBatchExecutorProductById =
-                    DelayedBatchExecutor.define(Duration.ofMillis(50), 10, this::retrieveProductsByIds);
+DelayeBatchExecutor implement this policy using the method execute(...)
+The thread is blocked until the result is available
 
- public Product getProductById(Integer id) {
-   Product product = delayedBatchExecutorProductById.execute(id);
-   return product;
- }
+	int param = ...;
+	...
+    // using blocking behaviour
+    String result = dbe.execute(param1); // the thread will be blocked until the result is available
+    // compute with result
 
- private List<Product> retrieveProductsByIds(List<Integer> idList) {
+The following diagram depicts how blocking policy works:
 
-    List<Product>  productList = ...// execute query:SELECT * FROM PRODUCT WHERE ID IN (idList.get(0), ..., idList.get(n));
-                                    // using your favourite API: JDBC, JPA, Hibernate...
 
-    // The positions of the elements of the list to return must match the ones in the parameters list.
-    // For instance, the first Product of the list to be returned must be the one with
-    // the Id in the first position of productIdsList and so on...
-    // NOTE: null could be used as value, meaning that no Product exist for the given productId
 
-    return productList;
-}
- ...
-}
-```
 
-First of all, an instance of `DelayedBatchExecutor` has to be created in the DAO, which in this case is `delayedBatchExecutorProductById`. It requires the defining of three parameters:
+#### Future (non blocking)
 
-* *Time window* (in this example 50 ms)
-* *Max capacity* of the list of parameters (in this example 10 parameters)
-* A method that will invoked with a list of parameters (we'll see the details later). In this example the method is `retrieveProductsByIds`
+DelayeBatchExecutor implement this policy using the method executeAsFuture(...)
 
-NOTE: We'll see later why `delayedBatchExecutorProductById` is an instance of class  `DelayedBatchExecutor2<Product, Integer>`
+	int param = ...;
+    // using Future
+    Future<String> resultFuture = dbe.executeAsFuture(param1); // the thread will not  be blocked
+    // compute something else
+    String result = resultFuture.get();  // Blocks the thread until the result is available (if necessary)
+    // compute with result
 
-Secondly, the DAO method `public Product getProductById(Integer productId)`  has been refactored to simply invoke the `execute` method of the `delayedBatchExecutorProductById` instance and that's it. All the "magic" is done by the `DelayedBatchExecutor`.
+The following diagram depicts how Future policy works:
 
-The reason why `delayedBatchExecutorProductById` is an instance of `DelayedBatchExecutor2<Product, Integer>` is because its `execute` method returns a `Product` instance and receives an `Integer` instance as its argument. Hence `DelayedBatchExecutor2<Product, Integer>`
 
-If the execute method requieres receiving two arguments (say an `Integer` and a `String` for instance) and returning an instance of `Product`, then the definition would be `DelayedBatchExecutor3<Product, Integer,String>`
+#### Reactive (by using reactor.core.publisher.Mono of Reactor):
+ 
+DelayeBatchExecutor implement this policy using  method executeAsMono(...), it 
 
-Finally, `retrieveProductsByIds` method must return a `List<Product>` and receive a `List<Integer>` as a parameter.
-
-If we were using `DelayedBatchExecutor3<Product, Integer,String>` , then the `retrieveProductsByIds` would have to be `List<Product> retrieveProductsByIds(List<Integer> productIdsList, List<String> stringList)`
-
-And that's it.
-
-Once running, the concurrent threads executing the controller logic invoke the method `getProductById(Integer id)` at some point, and this method will return the correspoding Product, they won't know that they may actually have been stopped and resumed by the  `DelayedBatchExecutor`
-
-See full example in `ProductDAO`
-
-#### Beyond data repositories
-Although this introduction pertains to data repositories, DelayedBatchExecutor could be used as well in other contexts, for instance in requests to REST microservices. Again, it is much more *expensive* to launch n GET requests with one parameter that 1 GET with n parameters.
-
-==
-
-(\*1) Regardless of whether the application is deployed in a cluster of nodes or not, each (JVM) node runs the application as a Java Multithreaded Application. For REST Microservices, the threads are usually managed by the underlying Servlet engine, and for Asyncronous Messaging Processors the threads are managed by  their Messaging Protocol implementation.
-
-(\*2) Strictly speaking, the  latency would be increased by 50 ms of the window time  plus the extra time required by the database to execute the n parameters query in comparison with when using just one parameter. However, this extra time is very small in most cases (a few milliseconds) where n is not extremely large. You can easily check it in your database.
-
-___
-
-## User Guide <a name="userguide"></a>
-
-#### Blocking Behaviour <a name="blockingbehaviour"></a>
-
-This behaviour is the one explained in the Introduction, where the method  `execute` of the delayedBatchExecutor blocks the execution of the thread until the result is returned.
-
-```java
-
-...
-
- Entity entityResult = delayedBatchExecutorInstance.execute(param);
-
- // the thread is blocked until entityResult is available
- // which means that it could take the *window time* in the worst case
-
- ...
-
-```
-
-#### Non-Blocking Behaviour <a name="notblockingbehaviour"></a>
-
-DelayedBatchExecutor offers a non-blocking behaviour (asynchronous) in order to take advantage of time where the thread must be paused. It uses java's Future asynchronous computation (java.util.concurrent.Future)
-
-```java
-
-...
-
- Future<Entity> entityResultFuture = delayedBatchExecutorInstance.executeAsync(param)
-
- // the thread is NOT blocked, the previous method doest not pause the thread
- // do any required computation
- // At any time, the result of the Future could be obtained:
-
- Entity entityResult = entityResultFuture.get();
- // the previous method will return the result if it is available, otherwise it will wait until is available.
- ...
-
-```
+     // using Mono
+    Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
+    // compute something else
+    resultMono.subscribe(stringResult -> {
+     // compute with stringResult
+    }
+	
+The following diagram depicts how Reactive policy works:
