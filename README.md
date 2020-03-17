@@ -49,9 +49,9 @@ A DelayedBatchExecutor is defined by three parameters:
  * WindowTime: defined as java.time.Duration
  * max size: it is the max number of items to be collected in the list
  * batchCallback: it receives the parameters list to perform a single query and returns a list with the corresponding results. 
-    - It can be implemented as a lambda expression or method reference: it receives a list of parameters and must return a list of result values
-    - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full 
-    - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...)
+    - It can be implemented as a lambda expression or method reference.
+    - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full. 
+    - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
