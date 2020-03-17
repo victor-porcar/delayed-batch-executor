@@ -101,7 +101,7 @@ The following diagram depicts how blocking policy works:
 ![Blocking image](/src/main/javadoc/doc-files/blocking.svg)
 
 
-### Non-blocking (Future)
+### Non-blocking (java.util.concurrent.Future)
 
 The thread is not blocked, it is implemented by using the method `executeAsFuture(...)`
 
@@ -126,7 +126,7 @@ The following diagram depicts how Future policy works:
 ```java 
     int param1 =...
        ...
-    Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
+    reactor.core.publisher.Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
     // compute something else
     resultMono.subscribe(stringResult -> {
          // compute with stringResult
