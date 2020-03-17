@@ -23,7 +23,7 @@ SELECT * FROM TABLE WHERE ID   = <Id2>
 ...
 SELECT * FROM TABLE WHERE ID   = <Idn>
 ```
-As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to *convert* these multiple executions of one query with one parameter to just one single query with n parameters:
+As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to *convert* easily these multiple executions of one query with one parameter to just one single query with n parameters, like this one:
 
 ```sql
 SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
@@ -33,30 +33,29 @@ The advantages of executing one query with n parameters instead of n queries of 
 
 * The usage of network resources is reduced dramatically: The number of round-trips to the database is 1 instead of n.
 
-* Database optimizer: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time and execution plan of 1 query of n parameters versus n queries of 1 parameter.
+* Database optimizer: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time, execution plan and resources usage for a single query of n parameters versus n queries of 1 parameter.
 
-* The usage of database connections from the application pool is reduced: there are more available connections overall, which means less waiting time for a connection.
+* The usage of database connections from the application pool is reduced: there are more available connections overall, which means less waiting time for a connection in peak times.
 
-In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter, which means more processing capacity.
+In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter.
 
 ### DelayedBatchExecutor in detail
 
-It basically works by creating  window times (tens of milliseconds is usually enough) where the indivual parameters of the queries are collected in a list. 
-As soon as the window time finishes, the list is passed (via callback)  to a  method that executes one query with  all the parameters in the list and it returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non-blocking (Future), non-blocking (Reactive).
+It basically works by creating  window times where the indivual parameters of the queries are collected in a list. 
+As soon as the window time finishes, the list is passed (via callback)  to a  method that implemenets logic to execute one query with  all the parameters in the list and returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non-blocking (Future), non-blocking (Reactive).
 
 A DelayedBatchExecutor is defined by three parameters:
  
  * WindowTime: defined as java.time.Duration
  * max size: it is the max number of items to be collected in the list
- * batchCallback:
+ * batchCallback: it receives the parameters list to perform a single query and returns a list with the corresponding results. 
     - It can be implemented as a lambda expression or method reference: it receives a list of parameters and must return a list of result values
     - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full 
     - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...)
-
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
-  #### Using a Lambda batchCallback
+  ##### Using a Lambda batchCallback
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -68,7 +67,7 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
  });
   ``` 
   
-  #### Using a Method Reference batchCallback
+  ##### Using a Method Reference batchCallback
   
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
