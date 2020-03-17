@@ -55,7 +55,7 @@ A DelayedBatchExecutor is defined by three parameters:
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
-  ##### Using a Lambda
+  #### Using a Lambda
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -67,7 +67,7 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
  });
   ``` 
   
-  ##### Using a Method Reference
+  #### Using a Method Reference
   
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
@@ -85,7 +85,7 @@ List<String> myBatchCallBack(List<Integer> listOfIntegers) {
 
 There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
 
-#### Blocking
+### Blocking
 
 The thread is blocked until the result is available, it is implemented by using the method `execute(...)`
  
@@ -100,7 +100,7 @@ The following diagram depicts how blocking policy works:
 ![Blocking image](/src/main/javadoc/doc-files/blocking.svg)
 
 
-#### Non-blocking (Future)
+### Non-blocking (Future)
 
 The thread is not blocked, it is implemented by using the method `executeAsFuture(...)`
 
@@ -118,7 +118,7 @@ The following diagram depicts how Future policy works:
 ![Future image](/src/main/javadoc/doc-files/future.svg)
 
 
-#### Non-blocking (Reactive using Reactor framework):
+### Non-blocking (Reactive using Reactor framework):
  
  The thread is not blocked, it is implemented by using the method `executeAsMono(...)`
  
