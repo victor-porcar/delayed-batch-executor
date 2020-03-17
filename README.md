@@ -33,11 +33,11 @@ The advantages of executing one query with n parameters instead of n queries of 
 
 * The usage of network resources is reduced dramatically: The number of round-trips to the database is 1 instead of n.
 
-* Database optimizer: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time, execution plan and resources usage for a single query of n parameters versus n queries of 1 parameter.
+* Database optimization: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time, execution plan and resources usage for a single query of n parameters versus n queries of 1 parameter.
 
 * The usage of database connections from the application pool is reduced: there are more available connections overall, which means less waiting time for a connection in peak times.
 
-In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter.
+In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter, which means that the system as a whole uses less resources to perform the same.
 
 ## DelayedBatchExecutor in detail
 
