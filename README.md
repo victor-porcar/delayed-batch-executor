@@ -39,7 +39,7 @@ The advantages of executing one query with n parameters instead of n queries of 
 
 In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter.
 
-### DelayedBatchExecutor in detail
+## DelayedBatchExecutor in detail
 
 It basically works by creating  window times where the indivual parameters of the queries are collected in a list. 
 As soon as the window time finishes, the list is passed (via callback)  to a  method that implemenets logic to execute one query with  all the parameters in the list and returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non-blocking (Future), non-blocking (Reactive).
@@ -81,10 +81,9 @@ List<String> myBatchCallBack(List<Integer> listOfIntegers) {
   	return resultList;
 }
 ``` 
+## Execution Policies
 
 There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
-
-
 
 #### Blocking
 
