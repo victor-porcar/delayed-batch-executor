@@ -52,6 +52,7 @@ A DelayedBatchExecutor is defined by three parameters:
     - It can be implemented as a lambda expression or method reference.
     - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full. 
     - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
+    - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not necessarily block the DelayedBatchExecutor.
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
@@ -134,6 +135,41 @@ The following diagram depicts how Future policy works:
 The following diagram depicts how Reactive policy works:
 
 ![Reactive image](/src/main/javadoc/doc-files/future.svg)
+
+## Advanced Usage
+
+There are two parameters of a DelayedBatchExecutor that must be known to get the most of it:
+
+- ExecutorService: the callback is actually executed in a parallel thread, which is provided by an java.util.concurrent.ExecutorService. By default this Executor is `Executors.newFixedThreadPool(4)`.
+
+- bufferQueueSize: it is the max size of the internal list, by default its value is 8192
+
+These parameters can be set by using the following constructor:
+
+```java
+... 
+int maxSize=20;
+ExecutorService executorService= Executors.newFixedThreadPool(10);
+int bufferQueueSize= 16384;
+  
+DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(
+    Duration.ofMillis(200), 
+    maxSize,
+    executorService,
+    bufferQueueSize,
+    this::myBatchCallBack);
+```
+ At any time, the configuration paramaters can be updated by using the following method
+ 
+```java
+...
+dbe.updateConfig(
+    Duration.ofMillis(200), 
+    maxSize,
+    executorService,
+    bufferQueueSize,
+    this::myBatchCallBack);
+ ```
 
 -----
 Foot note 1:  The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
