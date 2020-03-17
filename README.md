@@ -3,7 +3,7 @@
  
  I described a simple mechanism called DelayedBatchExecutor in my post [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) to decrease the number of required queries in multithreaded applications by batching them. 
  
- While this mechanism works well, it does block the invoking thread for a interval of time, which is not optimal in some cases. I have released a new version of DelayedBatchExecutor that includes non blocking behaviour in two ways:
+ While this mechanism works well, it does block the invoking thread for a interval of time, which is not optimal in some cases. I have released a new version of DelayedBatchExecutor that includes non-blocking behaviour in two ways:
 
 - using Futures (java.util.concurrent.Future) 
 - using Reactive programming (Reactor framework)
@@ -42,7 +42,7 @@ In short, it is much more efficient executing 1 query of n parameters than n que
 ### DelayedBatchExecutor in detail
 
 It basically works by creating  window times (tens of milliseconds is usually enough) where the indivual parameters of the queries are collected in a list. 
-As soon as the window time finishes, the list is passed (via callback)  to a  method that executes one query with  all the parameters in the list and it returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non blocking (Future), non blocking (Reactive).
+As soon as the window time finishes, the list is passed (via callback)  to a  method that executes one query with  all the parameters in the list and it returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non-blocking (Future), non-blocking (Reactive).
 
 A DelayedBatchExecutor is defined by three parameters:
  
@@ -103,7 +103,7 @@ The following diagram depicts how blocking policy works:
 ![Blocking image](/src/main/javadoc/doc-files/blocking.svg)
 
 
-#### Future (non blocking)
+#### Non-blocking (Future)
 
 The thread is not blocked, it is implemented by using the method `executeAsFuture(...)`
 
@@ -121,7 +121,7 @@ The following diagram depicts how Future policy works:
 ![Future image](/src/main/javadoc/doc-files/future.svg)
 
 
-#### Reactive (by using reactor.core.publisher.Mono of Reactor framework):
+#### Non-blocking (Reactive using Reactor framework):
  
  The thread is not blocked, it is implemented by using the method `executeAsMono(...)`
  
@@ -140,5 +140,5 @@ The following diagram depicts how Reactive policy works:
 -----
 Foot note 1:  The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
 
-for a DelayedBatchExecutor for two parameter (Integer and Date) and returning type a Srring, the definition would be
+For a DelayedBatchExecutor for two parameters (Integer and Date) and a returning type String, the definition would be:
 DelayedBatchExecutor3<String,Integer,Date> and so on...
