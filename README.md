@@ -75,10 +75,10 @@ DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duratio
 ...
   
 List<String> myBatchCallBack(List<Integer> listOfIntegers) {
-  List<String>  resultList = ...// execute query:SELECT * FROM TABKE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+	List<String>  resultList = ...// execute query:SELECT * FROM TABKE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
                                 // using your favourite API: JDBC, JPA, Hibernate.
-  ...
-  return resultList;
+  	...
+  	return resultList;
 }
 ``` 
 
