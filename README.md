@@ -159,7 +159,7 @@ DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(
     bufferQueueSize,
     this::myBatchCallBack);
 ```
- At any time, the configuration paramaters can be updated by using the following method
+ At any time, the configuration paramaters can be updated by using this thread safe method
  
 ```java
 ...
