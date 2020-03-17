@@ -55,7 +55,7 @@ A DelayedBatchExecutor is defined by three parameters:
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
-  ##### Using a Lambda batchCallback
+  ##### Using a Lambda
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -67,7 +67,7 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
  });
   ``` 
   
-  ##### Using a Method Reference batchCallback
+  ##### Using a Method Reference
   
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
