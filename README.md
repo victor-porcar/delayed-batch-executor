@@ -10,20 +10,20 @@
 
 ## Rationale behind DelayeBatchExecutor
 
-There are several scenarios in which concurrent threads execute the same query to a database at almost the same time, which means that the same query (with different argument) may be executed many times within a short interval of time if the number of concurrent threads is high. 
+There are several scenarios in which concurrent threads execute the same query to a database at almost the same time. 
 
 For example, a REST endpoint that is massively hit (tens or hundreds hits per second) in which it is required to execute a query to retrieve an entity by a different resourceId. 
 
 Another typical scenario is a  messaging listener that consumes tens or hundreds of messages per second and requires for each one to retrieve a row from a table by a different id.
 
-In all these cases, the database is executing many times the same query (with different argument), like this one:
+In all these cases, if the number of concurrent threads is high, the database executes many times the same query (with different argument) in a short interval of time
 ```sql
 SELECT * FROM TABLE WHERE ID   = <Id1>
 SELECT * FROM TABLE WHERE ID   = <Id2>
 ...
 SELECT * FROM TABLE WHERE ID   = <Idn>
 ```
-As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to *convert* these n executions of one query with one parameter in  one query with n parameters:
+As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to *convert* these executions of one query with one parameter in  one query with n parameters:
 
 ```sql
 SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
