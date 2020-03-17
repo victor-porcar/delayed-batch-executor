@@ -91,9 +91,8 @@ There are three policies to use a DelayedBatchExecutor from the code being execu
 The thread is blocked until the result is available, it is implemented by using the method `execute(...)`
  
 ```java 
-    int param = ...;
+    int param = ...
 	...
-    // using blocking behaviour
     String result = dbe.execute(param); // this thread will be blocked until the result is available
     // compute with result
 ```
@@ -107,8 +106,8 @@ The following diagram depicts how blocking policy works:
 The thread is not blocked, it is implemented by using the method `executeAsFuture(...)`
 
 ```java 
-    int param = ...;
-    // using Future
+    int param = ...
+       ...	
     Future<String> resultFuture = dbe.executeAsFuture(param); // the thread will not  be blocked
     // compute something else
     String result = resultFuture.get();  // Blocks the thread until the result is available (if necessary)
@@ -125,12 +124,13 @@ The following diagram depicts how Future policy works:
  The thread is not blocked, it is implemented by using the method `executeAsMono(...)`
  
 ```java 
-     // using Mono
+    int param1 =...
+       ...
     Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
     // compute something else
     resultMono.subscribe(stringResult -> {
-     // compute with stringResult
-    }
+         // compute with stringResult
+      }
 ```
 The following diagram depicts how Reactive policy works:
 
