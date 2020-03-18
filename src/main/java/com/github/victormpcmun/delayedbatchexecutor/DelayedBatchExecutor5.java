@@ -55,8 +55,6 @@ import java.util.concurrent.Future;
 
 public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
 
-    public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = DelayedBatchExecutor.DEFAULT_FIXED_THREAD_POOL_COUNTER; // this definitions is redundant, but javadoc seems to require it
-    public static final int DEFAULT_BUFFER_QUEUE_SIZE = DelayedBatchExecutor.DEFAULT_BUFFER_QUEUE_SIZE; // this definitions is redundant, but javadoc seems to require it
 
     /**
      * Receive as argument four Lists of type A,B,C,D and returns a List of type Z. It can be implemented as a lambda expression or method reference
@@ -98,9 +96,9 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B,C and D) and return type Z
      * <br>
      * <br>
-     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value #DEFAULT_FIXED_THREAD_POOL_COUNTER}
+     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_FIXED_THREAD_POOL_COUNTER}
      * <br>
-     * -It uses as a default bufferQueueSize value {@value #DEFAULT_BUFFER_QUEUE_SIZE}
+     * -It uses as a default bufferQueueSize value: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_BUFFER_QUEUE_SIZE}
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
@@ -116,7 +114,7 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
 
 
     public static <Z,A,B,C,D> DelayedBatchExecutor5<Z,A,B,C,D> create(Duration duration, int size, BatchCallBack5<Z,A,B,C,D> batchCallback5) {
-        return new DelayedBatchExecutor5<>(duration, size, getDefaultExecutorService(), getDefaultBufferQueueSize(), batchCallback5);
+        return new DelayedBatchExecutor5<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, batchCallback5);
     }
 
 

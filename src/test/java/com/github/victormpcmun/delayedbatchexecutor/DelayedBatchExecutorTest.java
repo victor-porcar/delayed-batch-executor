@@ -95,7 +95,7 @@ public class DelayedBatchExecutorTest {
 
             log.info("futureTest=>Doing some computation after invoking executeAsFuture");
 
-            String result=null;
+            String result;
             try {
                 result=future.get();
                 log.info("futureTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
@@ -303,7 +303,7 @@ public class DelayedBatchExecutorTest {
 
 
     @Test
-    public void extremeLargeSizeTest() throws InterruptedException, ExecutionException, TimeoutException {
+    public void extremeLargeSizeTest() {
 
         int fixedThreadPoolSize=10;
         int bufferQueueSize=40000;

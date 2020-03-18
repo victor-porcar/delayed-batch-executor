@@ -13,7 +13,7 @@ abstract class DelayedBatchExecutor {
     public static final int MIN_TIME_WINDOW_TIME_IN_MILLISECONDS=1;
     public static final int MAX_TIME_WINDOW_TIME_IN_MILLISECONDS=60*60*1000;
 
-    public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 10;
+    public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 4;
     public static final int DEFAULT_BUFFER_QUEUE_SIZE = 8192;
 
     private final AtomicLong invocationsCounter = new AtomicLong(0);
@@ -36,7 +36,7 @@ abstract class DelayedBatchExecutor {
     }
 
     /**
-     * Update the Duration and maxSize params of this Delayed Batch Executor, keeping the current executorService and bufferQueueSize
+     * Update the Duration and maxSize params of this Delayed Batch Executor, keeping the current existing value for executorService and bufferQueueSize
      * <br>
      * <br>
      * This method is thread safe
@@ -149,10 +149,6 @@ abstract class DelayedBatchExecutor {
         return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
     }
 
-    protected static Integer getDefaultBufferQueueSize() {
-        return DEFAULT_BUFFER_QUEUE_SIZE;
-    }
-
     private BatchCallBackExecutionResult getExecutionResultFromBatchCallback(List<Tuple> tupleList) {
         List<Object> resultFromCallBack=null;
         RuntimeException runtimeException=null;
@@ -201,6 +197,6 @@ abstract class DelayedBatchExecutor {
         boolean sameSize = (this.maxSize == size);
         boolean sameExecutorService = this.executorService != null && this.executorService == executorService; // same reference is enough
         boolean sameBufferQueueSize = (this.bufferQueueSize==bufferQueueSize);
-        return sameDuration && sameSize && sameExecutorService;
+        return sameDuration && sameSize && sameExecutorService && sameBufferQueueSize;
     }
 }
