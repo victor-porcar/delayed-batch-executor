@@ -14,7 +14,7 @@ There are several scenarios in which concurrent threads execute the same query (
 
 For example, a REST endpoint that is massively hit (tens or hundreds hits per second) in which it is required to execute a query to retrieve an entity by a different resourceId. 
 
-Another typical scenario is a  messaging listener that consumes tens or hundreds of messages per second and requires for each one to retrieve a row from a table by a different id when processing them.
+In a similar way, another typical scenario is a  messaging listener that consumes tens or hundreds of messages per second and requires for each one to retrieve a row from a table by a different id when processing them.
 
 In all these cases, if the number of concurrent threads is high, the database executes many times the same query in a short interval of time
 ```sql
