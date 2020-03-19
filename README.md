@@ -8,22 +8,22 @@
 - using Futures (java.util.concurrent.Future) 
 - using Reactive programming (Reactor framework)
 
-## Rationale behind DelayeBatchExecutor
+## Rationale behind of DelayeBatchExecutor
 
 There are several scenarios in which concurrent threads execute the same query (with different parameter) to a database at almost the same time. 
 
-For example, a REST endpoint that is massively hit (tens or hundreds hits per second) in which it is required to execute a query to retrieve an entity by a different resourceId. 
+For example, a REST endpoint serving tens or hundreds requests per second in which is required each for each one to retrieve a row from a table by a different id.
 
-In a similar way, another typical scenario is a  messaging listener that consumes tens or hundreds of messages per second and requires for each one to retrieve a row from a table by a different id when processing them.
+In a similar way, another typical scenario is a message listener that consumes tens or hundreds of messages per second and requires to process each message a query by a different id.
 
-In all these cases, if the number of concurrent threads is high, the database executes many times the same query in a short interval of time
+In these cases, if the number of concurrent threads is high, the database executes many times the same query in a short interval of time (a few milliseconds) like these:
 ```sql
 SELECT * FROM TABLE WHERE ID   = <Id1>
 SELECT * FROM TABLE WHERE ID   = <Id2>
 ...
 SELECT * FROM TABLE WHERE ID   = <Idn>
 ```
-As pointed in my  [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows to *convert* easily these multiple executions of one query with one parameter to just one single query with n parameters, like this one:
+As pointed in [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows easily to *convert* these multiple executions of one query with one parameter to just one single query with n parameters, like this one:
 
 ```sql
 SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
@@ -33,16 +33,16 @@ The advantages of executing one query with n parameters instead of n queries of 
 
 * The usage of network resources is reduced dramatically: The number of round-trips to the database is 1 instead of n.
 
-* Database optimization: you would be surprised how well databases optimize queries of n parameters. Pick any table of your schema and analyse the execution time, execution plan and resources usage for a single query of n parameters versus n queries of 1 parameter.
+* Database optimization: you would be surprised how well databases optimize queries of n parameters. Pick any large table of your schema and analyse the execution time, execution plan and resources usage for a single query of n parameters versus n queries of 1 parameter.
 
-* The usage of database connections from the application pool is reduced: there are more available connections overall, which means less waiting time for a connection in peak times.
+* The usage of database connections from the application pool is reduced: there are more available connections overall, which means less waiting time for a connection.
 
 In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter, which means that the system as a whole uses less resources to perform the same.
 
-## DelayedBatchExecutor in detail
+## DelayedBatchExecutor
 
-It basically works by creating  window times where the indivual parameters of the queries are collected in a list. 
-As soon as the window time finishes, the list is passed (via callback)  to a  method that implemenets logic to execute one query with  all the parameters in the list and returns a list with the results. Each thread receives their corresponding result following one of the three available policies detailed below: blocking , non-blocking (Future), non-blocking (Reactive).
+It basically works by creating window times where the parameters of the queries executed from the threads are collected in a list. 
+As soon as the window time finishes, the list is passed (via callback) to a method that executes one query with all the parameters in the list and returns another list with the results. Each thread receives their corresponding result from the result list according to one of the following policies as explained below: blocking , non-blocking (Future), non-blocking (Reactive).
 
 A DelayedBatchExecutor is defined by three parameters:
  
@@ -51,8 +51,8 @@ A DelayedBatchExecutor is defined by three parameters:
  * batchCallback: it receives the parameters list to perform a single query and returns a list with the corresponding results. 
     - It can be implemented as a lambda expression or method reference.
     - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full. 
-    - The returned listed must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
-    - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not prevent DelayedBatchExecutor to open new window times as long as there are threads availables from the ExecutorService
+    - The returned list must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
+    - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not prevent DelayedBatchExecutor to open new window times if required as long as there are threads availables from the ExecutorService.
 	
   Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
   
@@ -140,7 +140,7 @@ The following diagram depicts how Reactive policy works:
 
 There are two parameters of a DelayedBatchExecutor that must be known to get the most of it:
 
-- ExecutorService: the callback is actually executed in a parallel thread, which is provided by an java.util.concurrent.ExecutorService. By default this Executor is `Executors.newFixedThreadPool(4)`.
+- ExecutorService: the callback method is actually executed in a parallel thread, which is provided by an java.util.concurrent.ExecutorService. By default this Executor is `Executors.newFixedThreadPool(4)`.
 
 - bufferQueueSize: it is the max size of the internal list, by default its value is 8192
 
