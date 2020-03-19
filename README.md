@@ -16,7 +16,7 @@ For example, a REST endpoint serving tens or hundreds requests per second in whi
 
 In a similar way, another typical scenario is a message listener that consumes tens or hundreds of messages per second and requires to execute a query by a different Id to process each message.
 
-In these cases, if the number of concurrent threads is high, the database executes many times the same query in a short interval of time (a few milliseconds) like these:
+In these cases, if the number of concurrent threads is high, the database executes many times the same query in a short interval of time (say few milliseconds) like these:
 ```sql
 SELECT * FROM TABLE WHERE ID   = <Id1>
 SELECT * FROM TABLE WHERE ID   = <Id2>
