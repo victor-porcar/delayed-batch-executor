@@ -189,5 +189,5 @@ dbe.updateConfig(
 -----
 Foot note 1:  The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
 
-For a DelayedBatchExecutor for two parameters (Integer and Date) and a returning type String, the definition would be:
+For a DelayedBatchExecutor for two parameters (say Integer and Date) and a returning type String, the definition would be:
 DelayedBatchExecutor3<String,Integer,Date> and so on...
