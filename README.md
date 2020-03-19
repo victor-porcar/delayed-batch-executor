@@ -12,7 +12,7 @@
 
 There are several scenarios in which concurrent threads execute the same query (with different parameter) to a database at almost the same time. 
 
-For example, a REST endpoint serving tens or hundreds requests per second in which is required each for each one to retrieve a row from a table by a different id.
+For example, a REST endpoint serving tens or hundreds requests per second in which each one requireds to retrieve a row from a table by a different id.
 
 In a similar way, another typical scenario is a message listener that consumes tens or hundreds of messages per second and requires to process each message a query by a different id.
 
