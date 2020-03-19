@@ -91,10 +91,10 @@ String result = dbe.execute(param); // all the threads executing this code withi
 			            // their parameters (an integer value) collected in a list (list of integers) 
 				    // that will be passed to the callback method, and from the list returned from this
 				    // method, each thread will receive its corresponding value
-				    // all this managed behind the scenes by DelayedBatchExecutor
+				    // all this managed behind the scenes by the DelayedBatchExecutor
 }
 ```
-In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour).
+In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
 
 
 ## Execution Policies
