@@ -179,7 +179,7 @@ abstract class DelayedBatchExecutor {
     }
 
     private  UnicastProcessor<Tuple> createBufferedTimeoutUnicastProcessor(Duration duration, int maxSize, int bufferQueueSize) {
-        Queue<Tuple> blockingQueue =  new ArrayBlockingQueue<>(bufferQueueSize) ; // => https://github.com/reactor/reactor-core/issues/469
+        Queue<Tuple> blockingQueue =  new ArrayBlockingQueue<>(bufferQueueSize) ; // => https://github.com/reactor/reactor-core/issues/469#issuecomment-286040390
         UnicastProcessor<Tuple> newSource=UnicastProcessor.create(blockingQueue);
         newSource.publish().autoConnect().bufferTimeout(maxSize, duration).subscribe(this::executeBatchCallBack);
         return newSource;
