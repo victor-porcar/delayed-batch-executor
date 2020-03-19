@@ -49,30 +49,15 @@ A DelayedBatchExecutor is defined by three parameters:
  * WindowTime: defined as java.time.Duration
  * max size: it is the max number of items to be collected in the list
  * batchCallback: it receives the parameters list to perform a single query and returns a list with the corresponding results. 
-    - It can be implemented as a lambda expression or method reference.
+    - It can be implemented as method reference or lambda expression.
     - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full. 
     - The returned list must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
     - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not prevent DelayedBatchExecutor to open new window times if required as long as there are threads availables from the ExecutorService.
 	
-  Let's define a DelayedBatchExecutor( see footnote 1)  to receive an Integer value as parameter and return a String, and having a window time = 200 milliseconds, a max size = 20 elements and having the callback defined as lambda expression: 
-  
-
-```java
-DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
-{
-  List<String>  resultList = ...// execute query:SELECT * FROM TABLE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
-                                // using your favourite API: JDBC, JPA, Hibernate
-  ...
-  return resultList;
-  
- });
-  ``` 
-
-The same DelayedBatchExecutor2 but having the callback defined as method reference would be:
-
+  Let's define a DelayedBatchExecutor( see footnote 1)  to receive an Integer value as parameter and return a String, and having a window time = 50 milliseconds, a max size = 20 elements and having the callback defined as method reference: 
   
   ```java
-DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
+DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 20, this::myBatchCallBack);
   
 ...
   
@@ -84,16 +69,32 @@ List<String> myBatchCallBack(List<Integer> listOfIntegers) {
 }
 ```
 
+The same DelayedBatchExecutor2 but having the callback defined as lambda expression would be:
+
+```java
+DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 20, listOfIntegers-> 
+{
+  List<String>  resultList = ...// execute query:SELECT * FROM TABLE WHERE ID IN (listOfIntegers.get(0), ..., listOfIntegers.get(n));
+                                // using your favourite API: JDBC, JPA, Hibernate
+  ...
+  return resultList;
+  
+ });
+  ``` 
+
 Once defined, it is very easy to use from the code executed in each thread
 
   ```java
 // this code is executed in one of the multiple threads
-int param=3;
-String result = dbe.execute(param);
-// result contains the corresponding value for param=3 in this case
- 
+int param=...;
+String result = dbe.execute(param); // all the threads executing this code within a interval of 50 ms will have 
+			            // their parameters (an integer value) collected in a list (list of integers) 
+				    // that will be passed to the callback method, and from the list returned from this
+				    // method, each thread will receive its corresponding value
+				    // all this managed behind the scenes by DelayedBatchExecutor
 }
 ```
+In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour).
 
 
 ## Execution Policies
