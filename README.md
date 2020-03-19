@@ -52,7 +52,6 @@ A DelayedBatchExecutor is defined by three parameters:
     - It can be implemented as method reference or lambda expression.
     - It is invoked automatically as soon as the WindowTime is finished OR the collection list is full. 
     - The returned list must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
-    - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not prevent DelayedBatchExecutor to open new window times if required as long as there are threads availables from the ExecutorService.
 	
   Let's define a DelayedBatchExecutor( see footnote 1)  to receive an Integer value as parameter and return a String, and having a window time = 50 milliseconds, a max size = 20 elements and having the callback defined as method reference: 
   
@@ -156,6 +155,7 @@ The following diagram depicts how Reactive policy works:
 There are two parameters of a DelayedBatchExecutor that must be known to get the most of it:
 
 - ExecutorService: the callback method is actually executed in a parallel thread, which is provided by an java.util.concurrent.ExecutorService. By default this Executor is `Executors.newFixedThreadPool(4)`.
+ NOTE: the execution of the callback of a DelayedBatchExecutor does not prevent it to open new window times if required as long as there are threads availables from the ExecutorService.
 
 - bufferQueueSize: it is the max size of the internal list, by default its value is 8192
 
