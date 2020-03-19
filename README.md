@@ -23,7 +23,7 @@ SELECT * FROM TABLE WHERE ID   = <Id2>
 ...
 SELECT * FROM TABLE WHERE ID   = <Idn>
 ```
-As pointed in [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) , DelayedBatchExecutor is a component that allows easily to *convert* these multiple executions of one query with one parameter to just one single query with n parameters, like this one:
+DelayedBatchExecutor is a component that allows easily to *convert* these multiple executions of one query with one parameter to just one single query with n parameters, like this one:
 
 ```sql
 SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
