@@ -54,9 +54,9 @@ A DelayedBatchExecutor is defined by three parameters:
     - The returned list must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding with parameter in position 0 of the param list and so on...).
     - The callBack is actually executed in a Thead provided by a ExecutorService (see Advanced Usage below), which means that the execution of this callback method does not prevent DelayedBatchExecutor to open new window times if required as long as there are threads availables from the ExecutorService.
 	
-  Let's define a DelayedBatchExecutor(see footnote 1)  to receive as parameter a Integer and return a String, and having a window time = 200 milliseconds and a max size = 20 elements 
+  Let's define a DelayedBatchExecutor( see footnote 1)  to receive an Integer value as parameter and return a String, and having a window time = 200 milliseconds, a max size = 20 elements and having the callback defined as lambda expression: 
   
-  #### Using a Lambda
+
 ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, listOfIntegers-> 
 {
@@ -67,8 +67,9 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
   
  });
   ``` 
-  
-  #### Using a Method Reference
+
+The same DelayedBatchExecutor2 but having the callback defined as method reference would be:
+
   
   ```java
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(200), 20, this::myBatchCallBack);
@@ -81,7 +82,20 @@ List<String> myBatchCallBack(List<Integer> listOfIntegers) {
   	...
   	return resultList;
 }
-``` 
+```
+
+Once defined, it is very easy to use from the code executed in each thread
+
+  ```java
+// this code is executed in one of the multiple threads
+int param=3;
+String result = dbe.execute(param);
+// result contains the corresponding value for param=3 in this case
+ 
+}
+```
+
+
 ## Execution Policies
 
 There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
