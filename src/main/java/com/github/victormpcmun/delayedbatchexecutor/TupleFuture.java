@@ -12,37 +12,31 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
     private final Instant initInstant;
     private Instant endInstant;
 
-    public static <T> TupleFuture<T>  create(Object... argsAsArray) {
-        TupleFuture<T> tupleFuture = new TupleFuture<T>(argsAsArray);
-        return tupleFuture;
-    }
-
-    public Future<T> getFuture() {
-        return this;
-    }
-
-    private TupleFuture(Object... argsAsArray) {
+    TupleFuture(Object... argsAsArray) {
         super(argsAsArray);
         this.initInstant= Instant.now();
     }
 
-    public void commitResult() {
+    Future<T> getFuture() {
+        return this;
+    }
+
+    @Override
+    void commitResult() {
         super.commitResult();
         this.endInstant= Instant.now();
     }
 
+    @Override
+    void continueIfIsWaiting() {
+        synchronized (this) {
+            this.notify();
+        }
+    }
 
     @Override
     public boolean isDone() {
         return super.isDone();
-    }
-
-
-    @Override
-    public void continueIfIsWaiting() {
-        synchronized (this) {
-            this.notify();
-        }
     }
 
     @Override
@@ -70,6 +64,9 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
         return get(milliseconds);
     }
 
+    public Duration getDelayedTime() {
+        return Duration.between(initInstant,endInstant);
+    }
 
     private T get(long millisecondsWait) throws InterruptedException, ExecutionException, TimeoutException {
         synchronized (this) {
@@ -88,9 +85,5 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
             throw new ExecutionException(getRuntimeException());
         }
         return result;
-    }
-
-    public Duration getDelayedTime() {
-        return Duration.between(initInstant,endInstant);
     }
 }

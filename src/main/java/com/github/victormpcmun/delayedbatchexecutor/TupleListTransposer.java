@@ -5,7 +5,7 @@ import java.util.List;
 
 class TupleListTransposer {
 
-    public static List<List<Object>> transpose(List<Tuple> paramList) {
+    static List<List<Object>> transposeValuesAsListOfList(List<Tuple> paramList) {
         int argsCounter=paramList.get(0).getArgsSize();
         List<List<Object>> listOfListsOfArgs = buildEmptyListOfListsOfArgs(argsCounter);
         for (Tuple tuple:paramList) {

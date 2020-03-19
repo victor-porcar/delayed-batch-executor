@@ -5,19 +5,19 @@ import java.util.Collections;
 import java.util.List;
 
 class BatchCallBackExecutionResult {
-    final RuntimeException runtimeException;
-    final List<Object> resizedList;
+    private final RuntimeException runtimeException;
+    private final List<Object> resizedList;
 
-    public BatchCallBackExecutionResult(List<Object> result, RuntimeException runtimeException, int desiredSize) {
+    BatchCallBackExecutionResult(List<Object> result, RuntimeException runtimeException, int desiredSize) {
         this.runtimeException = runtimeException;
         this.resizedList= resizeListFillingWithNullsIfNecessary(result, desiredSize);
     }
 
-    public RuntimeException getThrownRuntimeExceptionOrNull() {
+    RuntimeException getThrownRuntimeExceptionOrNull() {
         return runtimeException;
     }
 
-    public Object getReturnedResultOrNull(int position) {
+    Object getReturnedResultOrNull(int position) {
         return resizedList.get(position);
     }
 

@@ -10,14 +10,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 abstract class DelayedBatchExecutor {
 
+    private static final String TO_STRING_FORMAT="DelayedBatchExecutor {invocationsCounter=%d, callBackExecutionsCounter=%d, duration=%d, size=%d, bufferQueueSize=%d}";
     public static final int MIN_TIME_WINDOW_TIME_IN_MILLISECONDS=1;
     public static final int MAX_TIME_WINDOW_TIME_IN_MILLISECONDS=60*60*1000;
 
     public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 4;
     public static final int DEFAULT_BUFFER_QUEUE_SIZE = 8192;
 
-    private final AtomicLong invocationsCounter = new AtomicLong(0);
-    private final AtomicLong callBackExecutionsCounter = new AtomicLong(0);
+    private final AtomicLong invocationsCounter;
+    private final AtomicLong callBackExecutionsCounter;
 
     private Duration duration;
     private int maxSize;
@@ -25,14 +26,14 @@ abstract class DelayedBatchExecutor {
     private int bufferQueueSize;
 	private UnicastProcessor<Tuple> source;
 
-    private static final String TO_STRING_FORMAT="DelayedBatchExecutor {invocationsCounter=%d, callBackExecutionsCounter=%d, duration=%d, size=%d, bufferQueueSize=%d}";
-
     protected DelayedBatchExecutor(Duration duration, int maxSize, ExecutorService executorService, int bufferQueueSize) {
         super();
         boolean configurationSuccessful = updateConfig(duration, maxSize, executorService, bufferQueueSize);
         if (!configurationSuccessful) {
             throw new RuntimeException("Illegal configuration parameters");
         }
+        invocationsCounter = new AtomicLong(0);
+        callBackExecutionsCounter = new AtomicLong(0);
     }
 
     /**
@@ -46,7 +47,7 @@ abstract class DelayedBatchExecutor {
      * @return  true if the configuration was successful updated, false otherwise
      *
      */
-    public  boolean updateConfig(Duration duration, int maxSize) {
+    public boolean updateConfig(Duration duration, int maxSize) {
         return updateConfig(duration, maxSize, executorService, bufferQueueSize);
     }
 
@@ -138,7 +139,7 @@ abstract class DelayedBatchExecutor {
         return String.format(TO_STRING_FORMAT, invocationsCounter.get(), callBackExecutionsCounter.get(),  duration.toMillis(), maxSize, bufferQueueSize);
     }
 
-    <Z> void enlistTuple(Tuple<Z> param) {
+    protected <Z> void enlistTuple(Tuple<Z> param) {
         invocationsCounter.incrementAndGet();
         source.onNext(param);
     }
@@ -153,7 +154,7 @@ abstract class DelayedBatchExecutor {
         List<Object> resultFromCallBack=null;
         RuntimeException runtimeException=null;
 
-        List<List<Object>> transposedTupleList = TupleListTransposer.transpose(tupleList);
+        List<List<Object>> transposedTupleList = TupleListTransposer.transposeValuesAsListOfList(tupleList);
         try {
              resultFromCallBack = getResultListFromBatchCallBack(transposedTupleList);
         } catch (RuntimeException re) {
@@ -167,9 +168,9 @@ abstract class DelayedBatchExecutor {
         CompletableFuture.runAsync(() -> {
             BatchCallBackExecutionResult batchCallBackExecutionResult = getExecutionResultFromBatchCallback(tupleList);
 
-            for (int index=0; index<tupleList.size(); index++) {
-                Tuple tuple = tupleList.get(index);
-                tuple.setResult(batchCallBackExecutionResult.getReturnedResultOrNull(index));
+            for (int indexTuple=0; indexTuple<tupleList.size(); indexTuple++) {
+                Tuple tuple = tupleList.get(indexTuple);
+                tuple.setResult(batchCallBackExecutionResult.getReturnedResultOrNull(indexTuple));
                 tuple.setRuntimeException(batchCallBackExecutionResult.getThrownRuntimeExceptionOrNull());
                 tuple.commitResult();
                 tuple.continueIfIsWaiting();

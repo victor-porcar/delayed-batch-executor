@@ -103,8 +103,8 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
      * @param  <B>  the type of the second argument
-     * @param  <C>  the third of the second argument
-     * @param  <D>  the fourth of the second argument
+     * @param  <C>  the type of the third argument
+     * @param  <D>  the type of the fourth argument
      * @param  duration  the time of the window time, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  batchCallback5 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack5})
@@ -125,7 +125,7 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @param  <A>  the type of the first argument
      * @param  <B>  the type of the second argument
      * @param  <C>  the type of the third argument
-     * @param  <D>  the fourth of the second argument
+     * @param  <D>  the type of the fourth argument
      * @param  duration  the time of the window time, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
@@ -158,21 +158,17 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * <img src="{@docRoot}/doc-files/blocking.svg" alt="blocking">
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type D defined for this Delayed Batch Executor
      * @return  the result of type Z
      *
      *
      */
     public Z execute(A arg1, B arg2, C arg3, D arg4) {
-        Future<Z> future = executeAsFuture(arg1, arg2, arg3, arg4);
-        try {
-            return future.get();
-        }  catch (ExecutionException e) {
-            throw (RuntimeException) e.getCause();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted waiting.  it shouldn't happen ever", e);
-        }
+        TupleBlocking<Z> tupleBlocking = new TupleBlocking<>(arg1, arg2, arg3, arg4);
+        enlistTuple(tupleBlocking);
+        Z value = tupleBlocking.getValueBlocking();
+        return value;
     }
 
     /**
@@ -191,13 +187,13 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * <br>
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type D defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result of type Z
      *
      */
     public Future<Z> executeAsFuture(A arg1, B arg2,C arg3, D arg4) {
-        TupleFuture<Z> tupleFuture = TupleFuture.create(arg1, arg2,arg3, arg4);
+        TupleFuture<Z> tupleFuture = new TupleFuture<>(arg1, arg2,arg3, arg4);
         enlistTuple(tupleFuture);
         Future<Z> future = tupleFuture.getFuture();
         return future;
@@ -219,14 +215,14 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * <br>
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
-     * @param  arg4 value of the fourth argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
+     * @param  arg4 value of the fourth argument of type D defined for this Delayed Batch Executor
      * @return  a <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a> for the result of type Z
      *
      *
      */
     public Mono<Z> executeAsMono(A arg1, B arg2,C arg3, D arg4) {
-        TupleMono<Z> tupleMono = TupleMono.create(arg1, arg2, arg3, arg4);
+        TupleMono<Z> tupleMono = new TupleMono<>(arg1, arg2, arg3, arg4);
         enlistTuple(tupleMono);
         Mono<Z> mono = tupleMono.getMono();
         return mono;

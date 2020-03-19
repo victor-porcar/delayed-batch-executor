@@ -157,14 +157,10 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
     public Z execute(A arg1, B arg2) {
-        Future<Z> future = executeAsFuture(arg1, arg2);
-        try {
-            return future.get();
-        }  catch (ExecutionException e) {
-            throw (RuntimeException) e.getCause();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted waiting.  it shouldn't happen ever", e);
-        }
+        TupleBlocking<Z> tupleBlocking = new TupleBlocking<>(arg1, arg2);
+        enlistTuple(tupleBlocking);
+        Z value = tupleBlocking.getValueBlocking();
+        return value;
     }
 
     /**
@@ -187,7 +183,7 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
     public Future<Z> executeAsFuture(A arg1, B arg2) {
-        TupleFuture<Z> tupleFuture = TupleFuture.create(arg1, arg2);
+        TupleFuture<Z> tupleFuture = new TupleFuture<>(arg1, arg2);
         enlistTuple(tupleFuture);
         Future<Z> future = tupleFuture.getFuture();
         return future;
@@ -214,7 +210,7 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
     public Mono<Z> executeAsMono(A arg1, B arg2) {
-        TupleMono<Z> tupleMono = TupleMono.create(arg1, arg2);
+        TupleMono<Z> tupleMono = new TupleMono<>(arg1, arg2);
         enlistTuple(tupleMono);
         Mono<Z> mono = tupleMono.getMono();
         return mono;

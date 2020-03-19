@@ -24,32 +24,32 @@ abstract class Tuple<T>  {
         return argsAsArray[argPosition];
     }
 
-    public void setResult(T result) {
+    void setResult(T result) {
         this.result = result;
     }
 
 
-    public void commitResult() {
+    void commitResult() {
         synchronized (this) {
             this.done = true;
         }
     }
 
-    public boolean isDone() {
+    boolean isDone() {
         return done;
     }
 
-    public abstract void continueIfIsWaiting();
+    abstract void continueIfIsWaiting();
 
-    public RuntimeException getRuntimeException() {
+    RuntimeException getRuntimeException() {
         return runtimeException;
     }
 
-    public void setRuntimeException(RuntimeException runtimeException) {
+    void setRuntimeException(RuntimeException runtimeException) {
         this.runtimeException = runtimeException;
     }
 
-    public boolean hasRuntimeException() {
+    boolean hasRuntimeException() {
         return runtimeException!=null;
     }
 }

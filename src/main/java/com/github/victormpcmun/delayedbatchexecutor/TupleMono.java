@@ -7,25 +7,20 @@ class TupleMono<T> extends Tuple<T> {
 
     private static final Integer MILLIS_TO_SLEEP_PER_ITERATION_TO_WAIT_SET_SINK = 10;
     private static final Integer ITERATIONS_TO_WAIT_SET_SINK = 20;
-    MonoSink<T> monoSink;
-    Mono<T> mono;
+    private MonoSink<T> monoSink;
+    private Mono<T> mono;
 
-    public static <T> TupleMono<T> create(Object... argsAsArray) {
-        TupleMono<T> tupleMono = new TupleMono<T>(argsAsArray);
-        tupleMono.mono = Mono.create(monoSink -> tupleMono.monoSink = monoSink);
-        return tupleMono;
+    TupleMono(Object... argsAsArray) {
+        super(argsAsArray);
+        this.mono = Mono.create(monoSink -> this.monoSink = monoSink);
     }
 
-    public Mono<T> getMono() {
+    Mono<T> getMono() {
         return mono;
     }
 
-    private TupleMono(Object... argsAsArray) {
-        super(argsAsArray);
-    }
-
     @Override
-    public void continueIfIsWaiting() {
+    void continueIfIsWaiting() {
         whileUntilSinkIsSet();
         if (hasRuntimeException()) {
             monoSink.error(getRuntimeException());
@@ -48,7 +43,6 @@ class TupleMono<T> extends Tuple<T> {
         if (monoSink == null) {
             throw new RuntimeException("MonoSink can not be set");
         }
-
     }
 }
 

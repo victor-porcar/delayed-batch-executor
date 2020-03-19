@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
  * <br>
  * <pre>
  * {@code
- * DelayedBatchExecutor3<String,Integer,Integer> dbe = DelayedBatchExecutor4.create(Duration.ofMillis(50), 10, this::myBatchCallback);
+ * DelayedBatchExecutor4<String,Integer,Integer> dbe = DelayedBatchExecutor4.create(Duration.ofMillis(50), 10, this::myBatchCallback);
  *
  * ...
  *
@@ -102,7 +102,7 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
      * @param  <B>  the type of the second argument
-     * @param  <C>  the third of the second argument
+     * @param  <C>  the type of the third argument
      * @param  duration  the time of the window time, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  batchCallback4 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack4})
@@ -155,20 +155,16 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * <img src="{@docRoot}/doc-files/blocking.svg" alt="blocking">
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
      * @return  the result of type Z
      *
      *
      */
     public Z execute(A arg1, B arg2, C arg3) {
-        Future<Z> future = executeAsFuture(arg1, arg2, arg3);
-        try {
-            return future.get();
-        }  catch (ExecutionException e) {
-            throw (RuntimeException) e.getCause();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted waiting.  it shouldn't happen ever", e);
-        }
+        TupleBlocking<Z> tupleBlocking = new TupleBlocking<>(arg1, arg2, arg3);
+        enlistTuple(tupleBlocking);
+        Z value = tupleBlocking.getValueBlocking();
+        return value;
     }
 
     /**
@@ -187,12 +183,12 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * <br>
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
      * @return  a {@link Future } for the result of type Z
      *
      */
     public Future<Z> executeAsFuture(A arg1, B arg2,C arg3) {
-        TupleFuture<Z> tupleFuture = TupleFuture.create(arg1, arg2,arg3);
+        TupleFuture<Z> tupleFuture = new TupleFuture<>(arg1, arg2,arg3);
         enlistTuple(tupleFuture);
         Future<Z> future = tupleFuture.getFuture();
         return future;
@@ -214,13 +210,13 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * <br>
      * @param  arg1 value of the first argument of type A defined for this Delayed Batch Executor
      * @param  arg2 value of the second argument of type B defined for this Delayed Batch Executor
-     * @param  arg3 value of the third argument of type B defined for this Delayed Batch Executor
+     * @param  arg3 value of the third argument of type C defined for this Delayed Batch Executor
      * @return  a <a href="https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Mono.html">Mono</a> for the result of type Z
      *
      *
      */
     public Mono<Z> executeAsMono(A arg1, B arg2,C arg3) {
-        TupleMono<Z> tupleMono = TupleMono.create(arg1, arg2, arg3);
+        TupleMono<Z> tupleMono = new TupleMono<>(arg1, arg2, arg3);
         enlistTuple(tupleMono);
         Mono<Z> mono = tupleMono.getMono();
         return mono;
