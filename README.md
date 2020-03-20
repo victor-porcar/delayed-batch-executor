@@ -44,7 +44,7 @@ In short, it is much more efficient executing 1 query of n parameters than n que
 It basically works by creating time windows where the parameters of the queries executed during the time window are collected in a list. 
 As soon as the time window finishes, the list is passed (via callback) to a method that executes one query with all the parameters in the list and returns another list with the results. Each thread receives their corresponding result from the result list according to one of the following policies as explained below: blocking , non-blocking (Future), non-blocking (Reactive).
 
-The mechanism for managing the time windows and the list of parameters is developed using a [bufferedTimeout Flux](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#bufferTimeout-int-java.time.Duration-) of the [Reactor Framework] (https://projectreactor.io/)  
+The mechanism for managing the time windows and the list of parameters is developed using a  Flux [bufferedTimeout](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#bufferTimeout-int-java.time.Duration-) of the [Reactor Framework](https://projectreactor.io/)  
 
 A DelayedBatchExecutor is defined by three parameters:
  
