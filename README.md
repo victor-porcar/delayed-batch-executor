@@ -5,7 +5,7 @@
  
  While this mechanism works well, it does need to block the threads for a interval of time, which is not optimal in some cases. I have released a new version of DelayedBatchExecutor that includes non-blocking behaviour in two ways:
 
-- using Futures (java.util.concurrent.Future) 
+- using [Futures](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html)
 - using Reactive programming (Reactor framework)
 
 ## Rationale behind of DelayeBatchExecutor
@@ -39,10 +39,12 @@ The advantages of executing one query with n parameters instead of n queries of 
 
 In short, it is much more efficient executing 1 query of n parameters than n queries of one parameter, which means that the system as a whole requires less resources.
 
-## DelayedBatchExecutor
+## DelayedBatchExecutor In Action
 
-It basically works by creating time windows where the parameters of the queries from threads executed during the time window are collected in a list. 
+It basically works by creating time windows where the parameters of the queries executed during the time window are collected in a list. 
 As soon as the time window finishes, the list is passed (via callback) to a method that executes one query with all the parameters in the list and returns another list with the results. Each thread receives their corresponding result from the result list according to one of the following policies as explained below: blocking , non-blocking (Future), non-blocking (Reactive).
+
+The mechanism for managing the time windows and the list of parameters is developed using a [bufferedTimeout Flux](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#bufferTimeout-int-java.time.Duration-) of the [Reactor Framework] (https://projectreactor.io/)  
 
 A DelayedBatchExecutor is defined by three parameters:
  
@@ -98,11 +100,11 @@ NOTE:
 - In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
 
 
-## Execution Policies
+### Execution Policies
 
 There are three policies to use a DelayedBatchExecutor from the code being executed from the threads
 
-### Blocking
+#### Blocking
 
 The thread is blocked until the result is available, it is implemented by using the method `execute(...)`
  
@@ -117,7 +119,7 @@ The following diagram depicts how blocking policy works:
 ![Blocking image](/src/main/javadoc/doc-files/blocking.svg)
 
 
-### Non-blocking (java.util.concurrent.Future)
+#### Non-blocking (java.util.concurrent.Future)
 
 The thread is not blocked, it is implemented by using the method `executeAsFuture(...)`
 
@@ -135,7 +137,7 @@ The following diagram depicts how Future policy works:
 ![Future image](/src/main/javadoc/doc-files/future.svg)
 
 
-### Non-blocking (Reactive using Reactor framework):
+#### Non-blocking (Reactive using Reactor framework):
  
  The thread is not blocked, it is implemented by using the method `executeAsMono(...)`
  
@@ -152,7 +154,7 @@ The following diagram depicts how Reactive policy works:
 
 ![Reactive image](/src/main/javadoc/doc-files/mono.svg)
 
-## Advanced Usage
+### Advanced Usage
 
 There are two parameters of a DelayedBatchExecutor that must be known to get the most of it:
 
