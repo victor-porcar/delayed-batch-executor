@@ -238,7 +238,7 @@ public class DelayedBatchExecutorTest {
     }
 
 
-    @Test
+    //@Test
     public void extremeLargeSizeTest() {
         int fixedThreadPoolSize=10;
         int bufferQueueSize=40000;
