@@ -1,16 +1,19 @@
-package com.github.victormpcmun.delayedbatchexecutor.tuple;
+package com.github.victormpcmun.delayedbatchexecutor;
 
-public abstract class Tuple<T>  {
+abstract class Tuple<T>  {
 
     protected boolean done;
     protected T result;
     protected final Object[] argsAsArray;
+
+    protected RuntimeException runtimeException;
 
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
         this.done = false;
         this.argsAsArray = argsAsArray;
+
     }
 
     int getArgsSize() {
@@ -21,21 +24,32 @@ public abstract class Tuple<T>  {
         return argsAsArray[argPosition];
     }
 
-    public void setResult(T result) {
+    void setResult(T result) {
         this.result = result;
     }
 
 
-    public void commitResult() {
+    void commitResult() {
         synchronized (this) {
             this.done = true;
         }
     }
 
-    public boolean isDone() {
+    boolean isDone() {
         return done;
     }
 
+    abstract void continueIfIsWaiting();
 
-    public abstract void continueIfIsWaiting();
+    RuntimeException getRuntimeException() {
+        return runtimeException;
+    }
+
+    void setRuntimeException(RuntimeException runtimeException) {
+        this.runtimeException = runtimeException;
+    }
+
+    boolean hasRuntimeException() {
+        return runtimeException!=null;
+    }
 }

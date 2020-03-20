@@ -1,230 +1,203 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import com.github.victormpcmun.delayedbatchexecutor.tuple.Tuple;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleListArgs;
-import com.github.victormpcmun.delayedbatchexecutor.tuple.TupleMono;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.MonoSink;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CompletableFuture;
+import java.util.Queue;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
+abstract class DelayedBatchExecutor {
 
-public abstract class DelayedBatchExecutor {
+    private static final String TO_STRING_FORMAT="DelayedBatchExecutor {invocationsCounter=%d, callBackExecutionsCounter=%d, duration=%d, size=%d, bufferQueueSize=%d}";
+    public static final int MIN_TIME_WINDOW_TIME_IN_MILLISECONDS=1;
+    public static final int MAX_TIME_WINDOW_TIME_IN_MILLISECONDS=60*60*1000;
 
-    public static final int MAX_SIZE = 1024;
-	public static final Duration MAX_TIME = Duration.ofSeconds(10);
-	private static final Duration MIN_TIME=Duration.ofMillis(1);
+    public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 4;
+    public static final int DEFAULT_BUFFER_QUEUE_SIZE = 8192;
 
+    private final AtomicLong invocationsCounter;
+    private final AtomicLong callBackExecutionsCounter;
 
-    private static final int QUEUE_SIZE = 4096; // max elements queued
+    private Duration duration;
+    private int maxSize;
+    private ExecutorService executorService;
+    private int bufferQueueSize;
+	private UnicastProcessor<Tuple> source;
 
-    private final int size;
-    private final Duration windowTime;
-
-	private final UnicastProcessor<Tuple> source;
-
-
-    @FunctionalInterface
-    public interface CallBack2<Z,A> {
-          List<Z> apply(List<A> firstParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack3<Z,A,B> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack4<Z,A,B,C> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack5<Z,A,B,C,D> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam, List<D> fourthParam);
-    }
-
-    @FunctionalInterface
-    public interface CallBack6<Z,A,B,C,D,E> {
-        List<Z> apply(List<A> firstParam, List<B> secondParam, List<C> thirdParam, List<D> fourthParam, List<E> fifthParam);
-    }
-
-
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor2&lt;Z,A&gt;,
-     * which is a subclass of a DelayedBatchExecutor for one argument.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A and returns a list of Type Z, which must have he size of the list received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-
-    public static <Z,A> DelayedBatchExecutor2<Z,A> define(Duration windowTime, int size, CallBack2<Z,A> callBack) {
-        return new DelayedBatchExecutor2<>(windowTime, size, callBack);
-    }
-
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor3&lt;Z,A,B&gt;,
-     * which is a subclass of a DelayedBatchExecutor for two arguments.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A and a list of type B, having both the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-    public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> define(Duration windowTime, int size, CallBack3<Z,A,B> callBack) {
-        return new DelayedBatchExecutor3<>(windowTime, size, callBack);
-    }
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor4&lt;Z,A,B,C&gt;,
-     * which is a subclass of a DelayedBatchExecutor for three arguments.
-     * <p>
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B and a list of type C having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-
-    public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> define(Duration windowTime, int size, CallBack4<Z,A,B,C> callBack) {
-        return new DelayedBatchExecutor4<>(windowTime, size, callBack);
-    }
-
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor5&lt;Z,A,B,C,D&gt;,
-     * which is a subclass of a DelayedBatchExecutor for four arguments.
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  <D>  the type of the fourth argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B, a list of type C and a list of type D having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-    public static <Z,A,B,C,D> DelayedBatchExecutor5<Z,A,B,C,D> define(Duration windowTime, int size, CallBack5<Z,A,B,C,D> callBack) {
-        return new DelayedBatchExecutor5<>(windowTime, size, callBack);
-    }
-
-    /**
-     * Creates an instance of a DelayedBatchExecutor6&lt;Z,A,B,C,D&gt;,
-     * which is a subclass of a DelayedBatchExecutor for five arguments.
-     * @param  <Z>  the return type
-     * @param  <A>  the type of the first argument
-     * @param  <B>  the type of the second argument
-     * @param  <C>  the type of the third argument
-     * @param  <D>  the type of the fourth argument
-     * @param  <E>  the type of the fifth argument
-     * @param  windowTime  the time of the window time, defined as a java.time.Duration
-     * @param  size the maximum number of parameters, whenever the number of parameters reaches this limit, the window time is close and the callback method is executed
-     * @param  callBack the method that will receive a list of type A,  a list of type B, a list of type C, a list of type D and a list of type E having all of them the same size and return a list Type Z, which must have he size of the lists received
-     * @return  an instance of type Z
-     *
-     * @author Victor Porcar
-     *
-     */
-    public static <Z,A,B,C,D,E> DelayedBatchExecutor6<Z,A,B,C,D,E> define(Duration windowTime, int size, CallBack6<Z,A,B,C,D,E> callBack) {
-        return new DelayedBatchExecutor6<>(windowTime, size, callBack);
-    }
-
-
-    protected DelayedBatchExecutor(Duration windowTime, int size) {
+    protected DelayedBatchExecutor(Duration duration, int maxSize, ExecutorService executorService, int bufferQueueSize) {
         super();
-        validateBoundaries(size, windowTime);
-        this.size = size;
-        this.windowTime = windowTime;
-        this.source = UnicastProcessor.create( new ArrayBlockingQueue<>(QUEUE_SIZE));  // => https://github.com/reactor/reactor-core/issues/469
-		Flux<Tuple> flux = source.publish().autoConnect();
-        flux.bufferTimeout(size, windowTime).subscribe(this::executeList);
+        boolean configurationSuccessful = updateConfig(duration, maxSize, executorService, bufferQueueSize);
+        if (!configurationSuccessful) {
+            throw new RuntimeException("Illegal configuration parameters");
+        }
+        invocationsCounter = new AtomicLong(0);
+        callBackExecutionsCounter = new AtomicLong(0);
     }
 
-
-    static <Z> void doSetSink(TupleMono<Z> tuple, MonoSink<Z> sinker) {
-        tuple.setMonoSink(sinker);
+    /**
+     * Update the Duration and maxSize params of this Delayed Batch Executor, keeping the current existing value for executorService and bufferQueueSize
+     * <br>
+     * <br>
+     * This method is thread safe
+     * <br>
+     * @param  duration  the new {@link Duration} for this Delayed Batch Executor
+     * @param  maxSize  the new maxsize  for this Delayed Batch Executor
+     * @return  true if the configuration was successful updated, false otherwise
+     *
+     */
+    public boolean updateConfig(Duration duration, int maxSize) {
+        return updateConfig(duration, maxSize, executorService, bufferQueueSize);
     }
 
+    /**
+     * Update the Duration, maxsize, ExecutorService  and bufferQueueSize params of this Delayed Batch Executor
+     * <br>
+     * <br>
+     * This method is thread safe
+     * <br>
+     * @param  duration  the new {@link Duration} for this Delayed Batch Executor
+     * @param  maxSize  the new maxsize  for this Delayed Batch Executor
+     * @param  executorService the new {@link ExecutorService} for this Delayed Batch Executor
+     * @param  bufferQueueSize max size of the internal queue to buffer values
+     * @return  true if the configuration was successful updated, false otherwise
+     *
+     */
+    public synchronized boolean updateConfig(Duration duration, int maxSize,  ExecutorService executorService, int bufferQueueSize) {
+        boolean validateConfig = validateConfigurationParameters(duration, maxSize, executorService, bufferQueueSize);
+        if (validateConfig) {
+            boolean parameterAreEqualToCurrentOnes = parameterAreEqualToCurrentOnes(duration,  maxSize, executorService, bufferQueueSize);
+            if (!parameterAreEqualToCurrentOnes) {
+                this.maxSize =maxSize;
+                this.duration=duration;
+                this.executorService=executorService;
+                this.bufferQueueSize=bufferQueueSize;
+                this.source = createBufferedTimeoutUnicastProcessor(duration, maxSize, bufferQueueSize);
 
-
-    protected abstract List<Object> getResultFromTupleList(TupleListArgs tupleListArgs);
-
-    private void executeList(List<Tuple> paramList) {
-        CompletableFuture.runAsync(() -> {
-
-            List result = getResultFromTupleList(new TupleListArgs(paramList));
-            List resizedList = ensureSizeFillingWithNullsIfNecessary(result, paramList.size());
-
-            for (int index=0; index<paramList.size(); index++) {
-                Tuple tuple = paramList.get(index);
-                tuple.setResult(resizedList.get(index));
-                tuple.commitResult();
-                tuple.continueIfIsWaiting();
             }
-        });
+        }
+        return validateConfig;
     }
 
-
-   <Z> void executeWithArgs(Tuple<Z> param) {
-        source.onNext(param);
+    /**
+     * The count of invocations of all of the execute methods of this Delayed Batch Executor: execute(...), executeAsFuture(...) or executeAsMono(...) since the creation of this Delayed Batch Executor
+     * @return  the count of invocations of all blocking, Future and Mono invocations since the creation of this Delayed Batch Executor
+     *
+     */
+    public Long getInvocationsCounter() {
+        return invocationsCounter.get();
     }
 
-    private void validateBoundaries(int size, Duration time) {
-        if (size < 1 || size > MAX_SIZE)  {
-            throw new IllegalArgumentException("max elements parameter must be in range ["+ 1 + ","+ MAX_SIZE + "]");
-        }
+    /**
+     * The count of executions of the batchCallBack method since the creation of this Delayed Batch Executor
+     * @return  the count of executions of the batchCallBack method since the creation of this Delayed Batch Executor
+     *
+     */
+    public Long getCallBackExecutionsCounter() {
+        return callBackExecutionsCounter.get();
+    }
 
-        if (MAX_TIME.compareTo(time) < 0 || time.compareTo(MIN_TIME) < 0) {
-            throw new IllegalArgumentException("time window parameter must be in range ["+ 1 + ","+ MAX_TIME.toMillis() + "] ms");
-        }
+    /**
+     * The current {@link Duration} of this Delayed Batch Executor
+     * @return  the current {@link Duration} of this Delayed Batch Executor
+     *
+     */
+    public Duration getDuration() {
+        return duration;
+    }
+
+    /**
+     * The current size of this Delayed Batch Executor
+     * @return  the current size of this Delayed Batch Executor
+     *
+     */
+    public Integer getMaxSize() {
+        return maxSize;
+    }
+
+    /**
+     * The current max size of the internal queue to buffer values
+     * @return  the current max size of the internal queue to buffer values
+     *
+     */
+    public Integer getBufferQueueSize() {
+        return bufferQueueSize;
+    }
+
+    /**
+     * The current ExecutorService
+     * @return  the current ExecutorService
+     *
+     */
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     @Override
     public String toString() {
-        return "DelayedBulkExecutor [size=" + size + ", windowTime=" + windowTime + "]";
+        return String.format(TO_STRING_FORMAT, invocationsCounter.get(), callBackExecutionsCounter.get(),  duration.toMillis(), maxSize, bufferQueueSize);
     }
 
-    private <T> List<T> ensureSizeFillingWithNullsIfNecessary(List<T> list, int size) {
-        if (list==null) {
-            list=Collections.nCopies(size,  null);
-        } else if (list.size()<size) {
-            list = new ArrayList(list); // make it mutable in case it isn't
-            list.addAll(Collections.nCopies(size-list.size(),null));
+    protected <Z> void enlistTuple(Tuple<Z> param) {
+        invocationsCounter.incrementAndGet();
+        source.onNext(param);
+    }
+
+    protected abstract List<Object> getResultListFromBatchCallBack(List<List<Object>>  transposedTupleList);
+
+    protected static ExecutorService getDefaultExecutorService() {
+        return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
+    }
+
+    private BatchCallBackExecutionResult getExecutionResultFromBatchCallback(List<Tuple> tupleList) {
+        List<Object> resultFromCallBack=null;
+        RuntimeException runtimeException=null;
+
+        List<List<Object>> transposedTupleList = TupleListTransposer.transposeValuesAsListOfList(tupleList);
+        try {
+             resultFromCallBack = getResultListFromBatchCallBack(transposedTupleList);
+        } catch (RuntimeException re) {
+            runtimeException=re;
         }
-        return list;
+        return new BatchCallBackExecutionResult(resultFromCallBack, runtimeException, tupleList.size());
     }
 
+    private void executeBatchCallBack(List<Tuple> tupleList) {
+        callBackExecutionsCounter.incrementAndGet();
+        CompletableFuture.runAsync(() -> {
+            BatchCallBackExecutionResult batchCallBackExecutionResult = getExecutionResultFromBatchCallback(tupleList);
 
+            for (int indexTuple=0; indexTuple<tupleList.size(); indexTuple++) {
+                Tuple tuple = tupleList.get(indexTuple);
+                tuple.setResult(batchCallBackExecutionResult.getReturnedResultOrNull(indexTuple));
+                tuple.setRuntimeException(batchCallBackExecutionResult.getThrownRuntimeExceptionOrNull());
+                tuple.commitResult();
+                tuple.continueIfIsWaiting();
+            }
+         }, this.executorService);
+    }
+
+    private  UnicastProcessor<Tuple> createBufferedTimeoutUnicastProcessor(Duration duration, int maxSize, int bufferQueueSize) {
+        Queue<Tuple> blockingQueue =  new ArrayBlockingQueue<>(bufferQueueSize) ; // => https://github.com/reactor/reactor-core/issues/469#issuecomment-286040390
+        UnicastProcessor<Tuple> newSource=UnicastProcessor.create(blockingQueue);
+        newSource.publish().autoConnect().bufferTimeout(maxSize, duration).subscribe(this::executeBatchCallBack);
+        return newSource;
+    }
+
+    private boolean validateConfigurationParameters(Duration duration, int maxSize, ExecutorService executorService, int bufferQueueSize) {
+        boolean sizeValidation = (maxSize >= 1);
+        boolean durationValidation = duration!=null && duration.toMillis()>=MIN_TIME_WINDOW_TIME_IN_MILLISECONDS && duration.toMillis()<=MAX_TIME_WINDOW_TIME_IN_MILLISECONDS;
+        boolean executorServiceValidation = (executorService!=null);
+        boolean bufferQueueSizeValidation = (bufferQueueSize>=1);
+        return sizeValidation && durationValidation && executorServiceValidation && bufferQueueSizeValidation;
+    }
+
+    private boolean parameterAreEqualToCurrentOnes(Duration duration, int size, ExecutorService executorService, int bufferQueueSize) {
+        boolean sameDuration = this.duration != null && this.duration.compareTo(duration) == 0;
+        boolean sameSize = (this.maxSize == size);
+        boolean sameExecutorService = this.executorService != null && this.executorService == executorService; // same reference is enough
+        boolean sameBufferQueueSize = (this.bufferQueueSize==bufferQueueSize);
+        return sameDuration && sameSize && sameExecutorService && sameBufferQueueSize;
+    }
 }
