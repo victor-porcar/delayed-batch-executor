@@ -107,7 +107,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      * @param  <D>  the type of the fourth argument
      * @param  <E>  the type of the fifth argument
      * @param  <F>  the type of the sixth argument
-     * @param  duration  the time of the window time, defined as {@link Duration }.
+     * @param  duration  the time window, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  batchCallback7 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack7})
      * @return  an instance of {@link DelayedBatchExecutor7}
@@ -130,7 +130,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      * @param  <D>  the type of the fourth argument
      * @param  <E>  the type of the fifth argument
      * @param  <F>  the type of the sixth argument
-     * @param  duration  the time of the window time, defined as {@link Duration }.
+     * @param  duration  the time window, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
      * @param  bufferQueueSize max size of the internal queue to buffer values.
