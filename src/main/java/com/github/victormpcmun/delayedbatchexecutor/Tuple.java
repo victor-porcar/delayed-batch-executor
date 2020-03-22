@@ -1,20 +1,28 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-abstract class Tuple<T>  {
+import java.util.Arrays;
 
-    protected boolean done;
+abstract class Tuple<T>  {
     protected T result;
     protected final Object[] argsAsArray;
 
     protected RuntimeException runtimeException;
 
+    private int hashCode;
+
     Tuple(Object... argsAsArray) {
         super();
         this.result = null;
-        this.done = false;
         this.argsAsArray = argsAsArray;
+        this.hashCode=Arrays.hashCode(argsAsArray);
 
     }
+
+    void copyResultAndRuntimeExceptionFromTuple(Tuple<T> tuple) {
+        this.result=tuple.getResult();
+        this.runtimeException=tuple.getRuntimeException();
+    }
+
 
     int getArgsSize() {
         return argsAsArray.length;
@@ -24,20 +32,15 @@ abstract class Tuple<T>  {
         return argsAsArray[argPosition];
     }
 
-    void setResult(T result) {
+    void setResultAndRuntimeException(T result, RuntimeException runtimeException) {
         this.result = result;
+        this.runtimeException=runtimeException;
     }
 
-
-    void commitResult() {
-        synchronized (this) {
-            this.done = true;
-        }
+    public T getResult() {
+        return result;
     }
 
-    boolean isDone() {
-        return done;
-    }
 
     abstract void continueIfIsWaiting();
 
@@ -45,11 +48,21 @@ abstract class Tuple<T>  {
         return runtimeException;
     }
 
-    void setRuntimeException(RuntimeException runtimeException) {
-        this.runtimeException = runtimeException;
-    }
 
     boolean hasRuntimeException() {
         return runtimeException!=null;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        // o will never null
+        Tuple<?> tuple = (Tuple<?>) o;
+        return Arrays.equals(argsAsArray, tuple.argsAsArray);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(argsAsArray);
     }
 }

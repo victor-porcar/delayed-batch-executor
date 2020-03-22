@@ -387,6 +387,60 @@ public class DelayedBatchExecutorTest {
         waitUntilFinishing(threadsAsFutures);
     }
 
+
+
+    @Test
+    public void duplicatedSameHashcodeAndEqualTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallbackWithSimulatedDelay);
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,2);
+            log.info("blockingTest=>Before invoking execute with arg {}", randomInteger);
+            String expectedValue =  PREFIX + randomInteger; // the expected String returned by delayedBatchExecutorCallback for a given integer
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
+            Assert.assertEquals(result,  expectedValue);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+    @Test
+    public void duplicatedSameHashcodeAndNotEqualTest() {
+        DelayedBatchExecutor2<String, String> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listString ->
+        {
+            log.info("duplicatedSameHashcodeAndNotEqualTest => there should be two elements in the list {}", listString);
+        List<String> result = new ArrayList<>();
+        for (String s: listString) {
+            result.add(s);
+        }
+        return result;
+        });
+
+
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,2);
+            String param;
+            if (randomInteger==1) {
+                param="Aa";
+            } else {
+                param="BB";
+            }
+            // Aa and BB have the same hashCode
+
+
+            String result = dbe2.execute(param); // it will block until the result is available
+            log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
+            Assert.assertEquals(result,  param);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
     //-----------------------------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------------------
 

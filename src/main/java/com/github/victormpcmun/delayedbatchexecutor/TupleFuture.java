@@ -11,9 +11,11 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
 
     private final Instant initInstant;
     private Instant endInstant;
+    private boolean done;
 
     TupleFuture(Object... argsAsArray) {
         super(argsAsArray);
+        this.done=false;
         this.initInstant= Instant.now();
     }
 
@@ -21,22 +23,19 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
         return this;
     }
 
-    @Override
-    void commitResult() {
-        super.commitResult();
-        this.endInstant= Instant.now();
-    }
 
     @Override
     void continueIfIsWaiting() {
         synchronized (this) {
+            this.endInstant= Instant.now();
+            this.done=true;
             this.notify();
         }
     }
 
     @Override
     public boolean isDone() {
-        return super.isDone();
+        return done;
     }
 
     @Override

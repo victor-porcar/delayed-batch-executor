@@ -4,6 +4,7 @@ import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -166,17 +167,28 @@ abstract class DelayedBatchExecutor {
     private void executeBatchCallBack(List<Tuple> tupleList) {
         callBackExecutionsCounter.incrementAndGet();
         CompletableFuture.runAsync(() -> {
-            BatchCallBackExecutionResult batchCallBackExecutionResult = getExecutionResultFromBatchCallback(tupleList);
 
-            for (int indexTuple=0; indexTuple<tupleList.size(); indexTuple++) {
-                Tuple tuple = tupleList.get(indexTuple);
-                tuple.setResult(batchCallBackExecutionResult.getReturnedResultOrNull(indexTuple));
-                tuple.setRuntimeException(batchCallBackExecutionResult.getThrownRuntimeExceptionOrNull());
-                tuple.commitResult();
+            TupleListDuplicatedFinder tupleListDuplicatedFinder = new TupleListDuplicatedFinder(tupleList);
+            List<Tuple> tupleListUnique = tupleListDuplicatedFinder.getTupleListUnique();
+            Map<Integer,Integer> duplicatedMapIndex = tupleListDuplicatedFinder.getDuplicatedMapIndex();
+            BatchCallBackExecutionResult batchCallBackExecutionResult = getExecutionResultFromBatchCallback(tupleListUnique);
+
+            for (int indexTuple=0; indexTuple<tupleListUnique.size(); indexTuple++) {
+                Tuple tuple = tupleListUnique.get(indexTuple);
+                tuple.setResultAndRuntimeException(batchCallBackExecutionResult.getReturnedResultOrNull(indexTuple), batchCallBackExecutionResult.getThrownRuntimeExceptionOrNull());
                 tuple.continueIfIsWaiting();
+            }
+
+            for (Integer duplicatedIndex: duplicatedMapIndex.keySet()) {
+                Tuple duplicatedTuple = tupleList.get(duplicatedIndex);
+                Tuple uniqueTuple = tupleList.get(duplicatedMapIndex.get(duplicatedIndex));
+                duplicatedTuple.copyResultAndRuntimeExceptionFromTuple(uniqueTuple);
+
+                duplicatedTuple.continueIfIsWaiting();
             }
          }, this.executorService);
     }
+
 
     private  UnicastProcessor<Tuple> createBufferedTimeoutUnicastProcessor(Duration duration, int maxSize, int bufferQueueSize) {
         Queue<Tuple> blockingQueue =  new ArrayBlockingQueue<>(bufferQueueSize) ; // => https://github.com/reactor/reactor-core/issues/469#issuecomment-286040390
