@@ -92,12 +92,14 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
     private final BatchCallBack4<Z,A,B,C> batchCallBack;
 
     /**
-     * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B and C) and return type Z
+     * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B and C) and return type Z. Similar to {@link DelayedBatchExecutor4#create(Duration, int, ExecutorService, int, boolean, BatchCallBack4)}  defaulting to:
      * <br>
      * <br>
-     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_FIXED_THREAD_POOL_COUNTER}
+     * -executorService:  the one returned by static method  {@link #getDefaultExecutorService()}
      * <br>
-     * -It uses as a default bufferQueueSize value: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_BUFFER_QUEUE_SIZE}
+     * -bufferQueueSize: the value of constant {@link #DEFAULT_BUFFER_QUEUE_SIZE}
+     * <br>
+     * -removeDuplicates:true
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
@@ -112,7 +114,7 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
 
 
     public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, BatchCallBack4<Z,A,B,C> batchCallback4) {
-        return new DelayedBatchExecutor4<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, batchCallback4);
+        return new DelayedBatchExecutor4<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback4);
     }
 
 
@@ -127,19 +129,20 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
      * @param  bufferQueueSize max size of the internal queue to buffer values.
+     * @param  removeDuplicates if true then duplicated arguments from execute*(...) methods are not passed to the batchCallBack (considering same {@link Object#hashCode()} and  being {@link Object#equals(Object)})
      * @param  batchCallback4 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack4})
-     * @return  an instance of {@link DelayedBatchExecutor4}
+      * @return  an instance of {@link DelayedBatchExecutor4}
      *
      */
 
-    public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack4<Z,A,B,C> batchCallback4) {
-        return new DelayedBatchExecutor4<>(duration, size, executorService, bufferQueueSize, batchCallback4);
+    public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize,  boolean removeDuplicates, BatchCallBack4<Z,A,B,C> batchCallback4) {
+        return new DelayedBatchExecutor4<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback4);
     }
 
 
 
-    private DelayedBatchExecutor4(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack4<Z,A,B,C> batchCallBack) {
-        super(duration, size , executorService, bufferQueueSize);
+    private DelayedBatchExecutor4(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates,  BatchCallBack4<Z,A,B,C> batchCallBack) {
+        super(duration, size , executorService, bufferQueueSize, removeDuplicates);
         this.batchCallBack = batchCallBack;
     }
 

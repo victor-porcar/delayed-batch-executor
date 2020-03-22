@@ -24,17 +24,20 @@ abstract class Tuple<T>  {
     }
 
 
+    public void setResult(T result) {
+        this.result = result;
+    }
+
+    public void setRuntimeException(RuntimeException runtimeException) {
+        this.runtimeException = runtimeException;
+    }
+
     int getArgsSize() {
         return argsAsArray.length;
     }
 
     Object getArgumentByPosition(int argPosition) {
         return argsAsArray[argPosition];
-    }
-
-    void setResultAndRuntimeException(T result, RuntimeException runtimeException) {
-        this.result = result;
-        this.runtimeException=runtimeException;
     }
 
     public T getResult() {

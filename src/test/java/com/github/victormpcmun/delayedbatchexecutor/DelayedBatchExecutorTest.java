@@ -244,7 +244,7 @@ public class DelayedBatchExecutorTest {
         int bufferQueueSize=40000;
         Duration duration=Duration.ofSeconds(2);
         int maxSize=30000;
-        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(duration, maxSize,  Executors.newFixedThreadPool(fixedThreadPoolSize), bufferQueueSize, integerList ->
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(duration, maxSize,  Executors.newFixedThreadPool(fixedThreadPoolSize), bufferQueueSize, true, integerList ->
         {
             List<String> stringListSimulatedResult = integerList.stream().map(value -> new String(PREFIX+value)).collect(Collectors.toList());
             log.info("BatchCallback.  Received {} args => {}. Returned {}. ", integerList.size(), integerList, stringListSimulatedResult );
