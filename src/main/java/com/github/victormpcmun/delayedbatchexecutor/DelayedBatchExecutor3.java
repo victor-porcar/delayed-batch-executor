@@ -61,7 +61,7 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      * <pre>
      * <b>Lambda expression</b>
      * {@code
-     * DelayedBatchExecutor3<String,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
+     * DelayedBatchExecutor3<String,Integer,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
      * {
      *      //arg1List and arg2List are List<Integer>
      *      List<String> result = ...

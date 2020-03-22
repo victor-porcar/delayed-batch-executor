@@ -10,34 +10,40 @@ public class TupleListDuplicatedFinder {
     private List<Tuple> allTupleList;
     private List<Tuple> tupleListUnique;
     private Map<Integer,Integer> duplicatedMapIndex;
+    Map<Integer,List<Integer>> hashCodeByTuplesIndexInList =new HashMap<>();
 
-    public TupleListDuplicatedFinder(List<Tuple> allTupleList) {
+    TupleListDuplicatedFinder(List<Tuple> allTupleList) {
         this.allTupleList = allTupleList;
-
-        Map<Integer,Integer> hashMap =new HashMap<>();
         duplicatedMapIndex = new HashMap<>();
         tupleListUnique = new ArrayList<>();
+
         for (int i = 0; i< allTupleList.size(); i++) {
             Tuple tuple = allTupleList.get(i);
-
             int tupleHashCode = tuple.hashCode();
-            Integer indexWithHashMap = hashMap.get(tupleHashCode);
+            List<Integer> listOfIndexesMatchingHashCode = hashCodeByTuplesIndexInList.get(tupleHashCode);
 
-            if (indexWithHashMap!=null)  {
-                if (tuple.equals(allTupleList.get(indexWithHashMap))) {
-                    duplicatedMapIndex.put(i,hashMap.get(tupleHashCode));
+            if (listOfIndexesMatchingHashCode==null)  {
+                List<Integer> listOfIndexes = new ArrayList<>();
+                listOfIndexes.add(i);
+                hashCodeByTuplesIndexInList.put(tupleHashCode, listOfIndexes);
+                tupleListUnique.add(tuple);
+            } else {
+                Integer matchingIndex = listOfIndexesMatchingHashCode.stream().filter(index -> tuple.equals(allTupleList.get(index))).findAny().orElse(null);
+                if (matchingIndex!=null) {
+                    duplicatedMapIndex.put(i,matchingIndex);
                 } else {
+                    listOfIndexesMatchingHashCode.add(i);
                     tupleListUnique.add(tuple);
                 }
-
-            } else {
-                hashMap.put(tupleHashCode,i);
-                tupleListUnique.add(tuple);
             }
+
         }
     }
 
-    public List<Tuple> getAllTupleList() {
+
+
+
+    List<Tuple> getAllTupleList() {
         return allTupleList;
     }
 

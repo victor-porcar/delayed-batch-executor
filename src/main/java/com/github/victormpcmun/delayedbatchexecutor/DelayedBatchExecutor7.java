@@ -14,7 +14,7 @@ import java.util.concurrent.Future;
  * <br>
  * <pre>
  * {@code
- * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallback);
+ * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallback);
  *
  * ...
  *

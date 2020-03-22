@@ -3,9 +3,7 @@ package com.github.victormpcmun.delayedbatchexecutor;
 import reactor.core.publisher.UnicastProcessor;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -192,30 +190,24 @@ abstract class DelayedBatchExecutor {
 
 
 
+    private void invokeBatchCallBackAndContinue(List<Tuple> tupleList) {
 
-
-
-    private BatchCallBackExecutionResult getExecutionResultFromBatchCallback(List<Tuple> tupleList) {
-        List<Object> resultFromCallBack=null;
+        List<Object> rawResultList=null;
+        List<Object> resultFromCallBack;
         RuntimeException runtimeException=null;
-
-        List<List<Object>> transposedTupleList = TupleListTransposer.transposeValuesAsListOfList(tupleList);
         try {
-             resultFromCallBack = getResultListFromBatchCallBack(transposedTupleList);
+            List<List<Object>> transposedTupleList = TupleListTransposer.transposeValuesAsListOfList(tupleList);
+            rawResultList = getResultListFromBatchCallBack(transposedTupleList);
         } catch (RuntimeException re) {
             runtimeException=re;
+        }  finally {
+            resultFromCallBack = resizeListFillingWithNullsIfNecessary(rawResultList, tupleList.size());
         }
-        return new BatchCallBackExecutionResult(resultFromCallBack, runtimeException, tupleList.size());
-    }
-
-
-    private void invokeBatchCallBackAndContinue(List<Tuple> tupleList) {
-        BatchCallBackExecutionResult batchCallBackExecutionResult = getExecutionResultFromBatchCallback(tupleList);
 
         for (int indexTuple=0; indexTuple<tupleList.size(); indexTuple++) {
             Tuple tuple = tupleList.get(indexTuple);
-            tuple.setResult(batchCallBackExecutionResult.getReturnedResultOrNull(indexTuple));
-            tuple.setRuntimeException(batchCallBackExecutionResult.getThrownRuntimeExceptionOrNull());
+            tuple.setResult(resultFromCallBack.get(indexTuple));
+            tuple.setRuntimeException(runtimeException);
             tuple.continueIfIsWaiting();
         }
     }
@@ -276,4 +268,17 @@ abstract class DelayedBatchExecutor {
         boolean sameBufferQueueSize = (this.bufferQueueSize==bufferQueueSize);
         return sameDuration && sameSize && sameExecutorService && sameBufferQueueSize;
     }
+
+
+
+    private List<Object> resizeListFillingWithNullsIfNecessary(List<Object> list, int desiredSize) {
+        if (list==null) {
+            list= Collections.nCopies(desiredSize,  null);
+        } else if (list.size()<desiredSize) {
+            list = new ArrayList(list); // make it mutable in case it isn't
+            list.addAll(Collections.nCopies(desiredSize-list.size(),null));
+        }
+        return list;
+    }
+
 }

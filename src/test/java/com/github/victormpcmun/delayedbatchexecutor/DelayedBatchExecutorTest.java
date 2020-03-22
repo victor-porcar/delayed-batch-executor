@@ -20,8 +20,8 @@ public class DelayedBatchExecutorTest {
 
     private final static int CONCURRENT_THREADS=10;
 
-    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
-    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 3000;
+    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 500;
+    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 1000;
 
     private final static Duration DBE_DURATION = Duration.ofMillis(50);
     private final static Integer DBE_MAX_SIZE = 4;
@@ -389,53 +389,55 @@ public class DelayedBatchExecutorTest {
 
 
 
-    @Test
-    public void duplicatedSameHashcodeAndEqualTest() {
-        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, this::delayedBatchExecutorCallbackWithSimulatedDelay);
-        Callable<Void> callable = () -> {
-            Integer randomInteger = getRandomIntegerFromInterval(1,2);
-            log.info("blockingTest=>Before invoking execute with arg {}", randomInteger);
-            String expectedValue =  PREFIX + randomInteger; // the expected String returned by delayedBatchExecutorCallback for a given integer
-            String result = dbe2.execute(randomInteger); // it will block until the result is available
-            log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", expectedValue, result);
-            Assert.assertEquals(result,  expectedValue);
-            return null;
-        };
-        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
-        waitUntilFinishing(threadsAsFutures);
-    }
-
 
     @Test
-    public void duplicatedSameHashcodeAndNotEqualTest() {
-        DelayedBatchExecutor2<String, String> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listString ->
+    public void duplicatedRemovedTest() {
+        DelayedBatchExecutor3<String, String,Integer> dbe3 = DelayedBatchExecutor3.create(DBE_DURATION, 500,
+                DelayedBatchExecutor3.getDefaultExecutorService(),
+                DelayedBatchExecutor3.DEFAULT_BUFFER_QUEUE_SIZE,true, (listString, intList) ->
         {
-            log.info("duplicatedSameHashcodeAndNotEqualTest => there should be two elements in the list {}", listString);
-        List<String> result = new ArrayList<>();
-        for (String s: listString) {
-            result.add(s);
+            log.info("list size {}. Content => {} --- {}", listString.size(), listString, intList);
+        List<String> resultList = new ArrayList<>();
+
+        for (int i=0; i<listString.size(); i++) {
+            String arg1 = listString.get(i);
+            Integer arg2 = intList.get(i);
+            String result = arg1+arg2;
+            resultList.add(result);
         }
-        return result;
+
+        List <String> listWithoutDuplicates = resultList.stream().distinct().collect(Collectors.toList());
+
+        if (resultList.size()!=listWithoutDuplicates.size()) {
+            throw new RuntimeException("WATCH OUT THERE ARE DUPLICATES");
+        }
+
+        return resultList;
         });
 
 
         Callable<Void> callable = () -> {
             Integer randomInteger = getRandomIntegerFromInterval(1,2);
             String param;
+
             if (randomInteger==1) {
-                param="Aa";
+                param="AaAaAa";
+            } else if (randomInteger==2){
+                param="AaAaBB";
+            }  else if (randomInteger==3){
+                param="AaBBAa";
             } else {
-                param="BB";
+                param="KK" + randomInteger;
             }
             // Aa and BB have the same hashCode
+            String expectedResult = param + randomInteger;
 
-
-            String result = dbe2.execute(param); // it will block until the result is available
-            log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
-            Assert.assertEquals(result,  param);
+            String result = dbe3.execute(param, randomInteger); // it will block until the result is available
+            //log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
+            Assert.assertEquals(result,  expectedResult);
             return null;
         };
-        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(1000, callable);
         waitUntilFinishing(threadsAsFutures);
     }
 
