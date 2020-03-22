@@ -390,57 +390,53 @@ public class DelayedBatchExecutorTest {
 
 
 
+
     @Test
     public void duplicatedRemovedTest() {
-        DelayedBatchExecutor3<String, String,Integer> dbe3 = DelayedBatchExecutor3.create(DBE_DURATION, 500,
+        DelayedBatchExecutor2<String, String> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, 500,
                 DelayedBatchExecutor3.getDefaultExecutorService(),
-                DelayedBatchExecutor3.DEFAULT_BUFFER_QUEUE_SIZE,true, (listString, intList) ->
-        {
-            log.info("list size {}. Content => {} --- {}", listString.size(), listString, intList);
-        List<String> resultList = new ArrayList<>();
-
-        for (int i=0; i<listString.size(); i++) {
-            String arg1 = listString.get(i);
-            Integer arg2 = intList.get(i);
-            String result = arg1+arg2;
-            resultList.add(result);
-        }
-
-        List <String> listWithoutDuplicates = resultList.stream().distinct().collect(Collectors.toList());
-
-        if (resultList.size()!=listWithoutDuplicates.size()) {
-            throw new RuntimeException("WATCH OUT THERE ARE DUPLICATES");
-        }
-
-        return resultList;
-        });
-
+                DelayedBatchExecutor3.DEFAULT_BUFFER_QUEUE_SIZE,true,  listString ->
+                {
+                    log.info("list size {}. Content => {} ", listString.size(), listString);
+                    List<String> resultList = new ArrayList<>();
+                    for (int i=0; i<listString.size(); i++) {
+                        String arg1 = listString.get(i);
+                        resultList.add(arg1);
+                    }
+                    List <String> listWithoutDuplicates = resultList.stream().distinct().collect(Collectors.toList());
+                    if (resultList.size()!=listWithoutDuplicates.size()) {
+                        throw new RuntimeException("WATCH OUT THERE ARE DUPLICATES");
+                    }
+                    return resultList;
+                });
 
         Callable<Void> callable = () -> {
-            Integer randomInteger = getRandomIntegerFromInterval(1,2);
-            String param;
 
-            if (randomInteger==1) {
-                param="AaAaAa";
-            } else if (randomInteger==2){
-                param="AaAaBB";
-            }  else if (randomInteger==3){
-                param="AaBBAa";
-            } else {
-                param="KK" + randomInteger;
+            for (int i=1; i<=100; i++) {
+
+                Integer randomInteger = getRandomIntegerFromInterval(1, 5);
+                String param = null;
+
+                if (randomInteger == 1) {
+                    param = "0-42L"; // same hashcode than "0-43-"
+                } else if (randomInteger == 2) {
+                    param = "0-43-";
+                } else if (randomInteger == 3) {
+                    param = "PP";
+                } else {
+                    param="KK" +randomInteger;
+                }
+                String expectedResult = param;
+
+                String result = dbe2.execute(param); // it will block until the result is available
+                //log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
+                Assert.assertEquals(result, expectedResult);
             }
-            // Aa and BB have the same hashCode
-            String expectedResult = param + randomInteger;
-
-            String result = dbe3.execute(param, randomInteger); // it will block until the result is available
-            //log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
-            Assert.assertEquals(result,  expectedResult);
             return null;
         };
         List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(1000, callable);
         waitUntilFinishing(threadsAsFutures);
     }
-
 
 
     //-----------------------------------------------------------------------------------------------------------------------
