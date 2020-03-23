@@ -439,6 +439,55 @@ public class DelayedBatchExecutorTest {
     }
 
 
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void nullInResponseTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            return null;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,1000);
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            Assert.assertNull(result);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void nullInSomePositionsInResultTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            List<String> resultList = new ArrayList<>();
+            for (int i=0; i<listOfIntegers.size();i++) {
+                if (listOfIntegers.get(i)==2) {
+                    resultList.add(null);
+                } else {
+                    resultList.add(PREFIX+listOfIntegers.get(i));
+                }
+            }
+            return resultList;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,3);
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            if (randomInteger==2) {
+                Assert.assertNull(result);
+            } else {
+                Assert.assertEquals(result,  PREFIX+randomInteger);
+            }
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
     //-----------------------------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------------------
 
