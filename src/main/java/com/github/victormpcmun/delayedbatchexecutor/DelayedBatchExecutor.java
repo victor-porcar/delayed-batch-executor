@@ -51,7 +51,6 @@ abstract class DelayedBatchExecutor {
         this.invocationsCounter = new AtomicLong(0);
         this.callBackExecutionsCounter = new AtomicLong(0);
         this.removeDuplicates=removeDuplicates;
-
     }
 
     /**
@@ -174,8 +173,6 @@ abstract class DelayedBatchExecutor {
         return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
     }
 
-
-
     @Override
     public String toString() {
         return String.format(TO_STRING_FORMAT, invocationsCounter.get(), callBackExecutionsCounter.get(),  duration.toMillis(), maxSize, bufferQueueSize);
@@ -188,10 +185,7 @@ abstract class DelayedBatchExecutor {
 
     protected abstract List<Object> getResultListFromBatchCallBack(List<List<Object>>  transposedTupleList);
 
-
-
     private void invokeBatchCallBackAndContinue(List<Tuple> tupleList) {
-
         List<Object> rawResultList=null;
         List<Object> resultFromCallBack;
         RuntimeException runtimeException=null;
@@ -230,7 +224,6 @@ abstract class DelayedBatchExecutor {
                 List<Tuple> tupleListUnique = tupleListDuplicatedFinder.getTupleListUnique();
                 invokeBatchCallBackAndContinue(tupleListUnique);
                 assignValuesToDuplicatesAndContinue(tupleListDuplicatedFinder);
-
          }, this.executorService);
     }
 
@@ -280,5 +273,4 @@ abstract class DelayedBatchExecutor {
         }
         return list;
     }
-
 }

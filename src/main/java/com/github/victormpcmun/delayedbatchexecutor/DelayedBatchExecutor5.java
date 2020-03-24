@@ -113,12 +113,9 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @return  an instance of {@link DelayedBatchExecutor5}
      *
      */
-
-
     public static <Z,A,B,C,D> DelayedBatchExecutor5<Z,A,B,C,D> create(Duration duration, int size, BatchCallBack5<Z,A,B,C,D> batchCallback5) {
         return new DelayedBatchExecutor5<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback5);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B,C and D) and return type Z
@@ -137,11 +134,9 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
      * @return  an instance of {@link DelayedBatchExecutor5}
      *
      */
-
     public static <Z,A,B,C,D> DelayedBatchExecutor5<Z,A,B,C,D> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize,  boolean removeDuplicates, BatchCallBack5<Z,A,B,C,D> batchCallback5) {
         return new DelayedBatchExecutor5<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback5);
     }
-
 
 
     private DelayedBatchExecutor5(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack5<Z,A,B,C,D> batchCallBack) {
@@ -230,7 +225,6 @@ public class DelayedBatchExecutor5<Z,A,B,C,D> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {

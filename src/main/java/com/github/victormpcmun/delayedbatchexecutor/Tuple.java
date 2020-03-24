@@ -5,9 +5,7 @@ import java.util.Arrays;
 abstract class Tuple<T>  {
     protected T result;
     protected final Object[] argsAsArray;
-
     protected RuntimeException runtimeException;
-
     private int hashCode;
 
     Tuple(Object... argsAsArray) {
@@ -44,18 +42,15 @@ abstract class Tuple<T>  {
         return result;
     }
 
-
     abstract void continueIfIsWaiting();
 
     RuntimeException getRuntimeException() {
         return runtimeException;
     }
 
-
     boolean hasRuntimeException() {
         return runtimeException!=null;
     }
-
 
     @Override
     public boolean equals(Object o) {

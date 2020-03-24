@@ -23,7 +23,6 @@ class TupleFuture<T> extends Tuple<T> implements Future<T> {
         return this;
     }
 
-
     @Override
     void continueIfIsWaiting() {
         synchronized (this) {

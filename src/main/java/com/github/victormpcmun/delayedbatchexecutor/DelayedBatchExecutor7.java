@@ -55,7 +55,6 @@ import java.util.concurrent.Future;
 
 public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
 
-
     /**
      * Receive as argument six Lists of type A,B,C,D,E,F and returns a List of type Z. It can be implemented as a lambda expression or method reference
      * <br>
@@ -116,11 +115,9 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      *
      */
 
-
     public static <Z,A,B,C,D,E,F> DelayedBatchExecutor7<Z,A,B,C,D,E,F> create(Duration duration, int size, BatchCallBack7<Z,A,B,C,D,E,F> batchCallback7) {
         return new DelayedBatchExecutor7<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback7);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B,C,D and E) and return type Z
@@ -145,8 +142,6 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
     public static <Z,A,B,C,D,E,F> DelayedBatchExecutor7<Z,A,B,C,D,E,F> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack7<Z,A,B,C,D,E,F> batchCallback7) {
         return new DelayedBatchExecutor7<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback7);
     }
-
-
 
     private DelayedBatchExecutor7(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack7<Z,A,B,C,D,E,F> batchCallBack) {
         super(duration, size , executorService, bufferQueueSize, removeDuplicates);
@@ -240,7 +235,6 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {

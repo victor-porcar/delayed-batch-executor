@@ -114,12 +114,9 @@ public class DelayedBatchExecutor6<Z,A,B,C,D,E> extends DelayedBatchExecutor {
      * @return  an instance of {@link DelayedBatchExecutor6}
      *
      */
-
-
     public static <Z,A,B,C,D,E> DelayedBatchExecutor6<Z,A,B,C,D,E> create(Duration duration, int size, BatchCallBack6<Z,A,B,C,D,E> batchCallback6) {
         return new DelayedBatchExecutor6<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback6);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B,C,D and E) and return type Z
@@ -235,7 +232,6 @@ public class DelayedBatchExecutor6<Z,A,B,C,D,E> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {

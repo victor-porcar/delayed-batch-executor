@@ -111,8 +111,6 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      * @return  an instance of {@link DelayedBatchExecutor4}
      *
      */
-
-
     public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, BatchCallBack4<Z,A,B,C> batchCallback4) {
         return new DelayedBatchExecutor4<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback4);
     }
@@ -138,7 +136,6 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
     public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize,  boolean removeDuplicates, BatchCallBack4<Z,A,B,C> batchCallback4) {
         return new DelayedBatchExecutor4<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback4);
     }
-
 
 
     private DelayedBatchExecutor4(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates,  BatchCallBack4<Z,A,B,C> batchCallBack) {
@@ -224,7 +221,6 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {

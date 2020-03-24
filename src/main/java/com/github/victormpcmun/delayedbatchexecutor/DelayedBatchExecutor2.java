@@ -216,7 +216,6 @@ public class DelayedBatchExecutor2<Z,A> extends DelayedBatchExecutor {
         return mono;
     }
 
-
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {
         List<Object> resultList = (List<Object>) batchCallBack.apply(

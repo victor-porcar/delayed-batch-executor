@@ -51,7 +51,6 @@ import java.util.concurrent.Future;
  * @author Victor Porcar
  *
  */
-
 public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
 
     /**
@@ -110,11 +109,9 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
 
-
     public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> create(Duration duration, int size, BatchCallBack3<Z,A,B> batchCallback3) {
         return new DelayedBatchExecutor3<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback3);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A and B) and return type Z
@@ -218,7 +215,6 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {
