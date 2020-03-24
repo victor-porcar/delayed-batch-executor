@@ -42,7 +42,7 @@ In short, it is much more efficient executing 1 query of n parameters than n que
 ## DelayedBatchExecutor In Action
 
 It basically works by creating *time windows* where the parameters of the queries executed during the *time window* are collected in a list. 
-As soon as the *time window* finishes, the list is passed (via callback) to a method that executes one single query with all the parameters in the list and returns another list with the results. Each thread receives their corresponding result from the result list according to one of the following policies as explained below: blocking , non-blocking (Future), non-blocking (Reactive).
+As soon as the *time window* finishes, the list is passed (via callback) to a method that executes one single query with all the parameters in the list and returns another list with the results. Each thread receives their corresponding result from the result list according to one of the following policies as explained below: blocking , non-blocking (Future) and non-blocking (Reactive).
 
 A DelayedBatchExecutor is defined by three parameters:
  
@@ -81,8 +81,8 @@ DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duratio
   
  });
   ``` 
-
-Once defined, it is very easy to use from the code executed in each thread
+NOTE: the instance `dbe` must be accesible from the code being executed by the threads (it is often declared as instance variable of a singleton DAO).
+Once defined the DelayedBatchExecutor instance, it is easy to use it from the code executed in each thread
 
   ```java
 // this code is executed in one of the multiple threads
@@ -96,7 +96,7 @@ String result = dbe.execute(param); // all the threads executing this code withi
 ```
 NOTE:
 - To create a DelayedBatchExecutor for taking more than one argument see FootNote 1
-- In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
+- In the example above, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
 
 
 ### Execution Policies
