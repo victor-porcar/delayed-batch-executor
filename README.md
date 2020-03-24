@@ -141,13 +141,13 @@ The following diagram depicts how Future policy works:
  The thread is not blocked, it is implemented by using the method `executeAsMono(...)`
  
 ```java 
-    int param1 =...
+    int param =...
        ...
-    reactor.core.publisher.Mono<String> resultMono = dbe.executeAsMono(param1); // the thread will not  be blocked
+    reactor.core.publisher.Mono<String> resultMono = dbe.executeAsMono(param); // the thread will not  be blocked
     // compute something else
     resultMono.subscribe(stringResult -> {
          // compute with stringResult
-      }
+      });
 ```
 The following diagram depicts how Reactive policy works:
 

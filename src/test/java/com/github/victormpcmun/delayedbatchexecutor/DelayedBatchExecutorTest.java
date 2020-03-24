@@ -20,8 +20,8 @@ public class DelayedBatchExecutorTest {
 
     private final static int CONCURRENT_THREADS=10;
 
-    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
-    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 3000;
+    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 0;
+    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
 
     private final static Duration DBE_DURATION = Duration.ofMillis(50);
     private final static Integer DBE_MAX_SIZE = 4;

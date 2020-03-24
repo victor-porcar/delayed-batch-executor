@@ -21,23 +21,23 @@ import java.util.concurrent.Future;
  * public void usingDelayedBatchExecutor(Integer param1, Integer param2, Integer param3, Integer param4,Integer param5,Integer param6) {
  *
  *    // using blocking behaviour
- *    String stringResult = dbe.execute(param1, param2, param3, param4, param5, param6); // the thread will be blocked until the result is available
- *    // compute with stringResult
+ *    String stringResult1 = dbe.execute(param1, param2, param3, param4, param5, param6); // the thread will be blocked until the result is available
+ *    // compute with stringResult1
  *
  *
  *    // using Future
  *    Future<String> resultAsFutureString = dbe.executeAsFuture(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
  *    // compute something else
- *    String stringResult = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
- *    // compute with stringResult
+ *    String stringResult2 = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
+ *    // compute with stringResult2
  *
  *
  *    // using Mono
- *    Mono<String> stringResult = dbe.executeAsMono(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
+ *    Mono<String> monoResult = dbe.executeAsMono(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
  *    // compute something else
- *    monoResult.subscribe(stringResult -> {
- *     // compute with stringResult
- *    }
+ *    monoResult.subscribe(stringResult3 -> {
+ *     // compute with stringResult3
+ *    });
  * }
  *
  * ...
@@ -62,7 +62,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      * <pre>
      * <b>Lambda expression</b>
      * {@code
-     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, (arg1List, arg2List, arg3list, arg4List, arg5List, arg6List) ->
+     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, (arg1List, arg2List, arg3list, arg4List, arg5List, arg6List) ->
      * {
      *      //arg1List,arg2List,arg3List,arg4List, arg5List and arg6List are List<Integer>
      *      List<String> result = ...
@@ -72,7 +72,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      *}
      * <b>Method reference</b>
      * {@code
-     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
+     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
      * ...
      * List<String> myBatchCallBack(List<Integer> arg1List, List<Integer> arg2List, List<Integer> arg3List, List<Integer> arg4List, List<Integer> arg5List, List<Integer> arg6List) {
      *      List<String> result = ...

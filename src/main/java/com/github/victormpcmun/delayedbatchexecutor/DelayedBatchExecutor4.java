@@ -21,23 +21,23 @@ import java.util.concurrent.Future;
  * public void usingDelayedBatchExecutor(Integer param1, Integer param2, Integer param3) {
  *
  *    // using blocking behaviour
- *    String stringResult = dbe.execute(param1, param2, param3); // the thread will be blocked until the result is available
- *    // compute with stringResult
+ *    String stringResult1 = dbe.execute(param1, param2, param3); // the thread will be blocked until the result is available
+ *    // compute with stringResult1
  *
  *
  *    // using Future
  *    Future<String> resultAsFutureString = dbe.executeAsFuture(param1, param2, param3); // the thread will not  be blocked
  *    // compute something else
- *    String stringResult = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
- *    // compute with stringResult
+ *    String stringResult2 = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
+ *    // compute with stringResult2
  *
  *
  *    // using Mono
- *    Mono<String> stringResult = dbe.executeAsMono(param1, param2, param3); // the thread will not  be blocked
+ *    Mono<String> monoResult = dbe.executeAsMono(param1, param2, param3); // the thread will not  be blocked
  *    // compute something else
  *    monoResult.subscribe(stringResult -> {
  *     // compute with stringResult
- *    }
+ *    });
  * }
  *
  * ...

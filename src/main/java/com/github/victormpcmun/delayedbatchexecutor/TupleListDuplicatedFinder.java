@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TupleListDuplicatedFinder {
+class TupleListDuplicatedFinder {
 
     private List<Tuple> allTupleList;
     private List<Tuple> tupleListUnique;
