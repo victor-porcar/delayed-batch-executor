@@ -29,7 +29,7 @@ DelayedBatchExecutor is a component that allows easily to *convert* these n quer
 SELECT * FROM TABLE WHERE ID IN (<id1>, <id2>, ..., <idn>)
 ```
 
-The advantages of executing one query with n parameters instead of n queries of 1 argument are the following:
+The advantages of executing one query with n parameters instead of n queries of 1 parameter are the following:
 
 * The usage of network resources is reduced dramatically: The number of round-trips to the database is 1 instead of n.
 
