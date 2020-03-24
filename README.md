@@ -95,7 +95,7 @@ String result = dbe.execute(param); // all the threads executing this code withi
 }
 ```
 NOTE:
-- To create DelayedBatchExecutor for more than one parameter see FootNote 1
+- To create a DelayedBatchExecutor for taking more than one argument see FootNote 1
 - In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
 
 
