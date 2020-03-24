@@ -488,6 +488,26 @@ public class DelayedBatchExecutorTest {
 
 
 
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void voidTest() {
+        DelayedBatchExecutor2<Void, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            log.info("received: {}", listOfIntegers);
+            return null;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,100);
+            Future<Void> result = dbe2.executeAsFuture(randomInteger);
+
+            sleepCurrentThread(500);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
     //-----------------------------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------------------
 
