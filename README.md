@@ -54,8 +54,9 @@ A DelayedBatchExecutor is defined by three parameters:
     - It can be implemented as method reference or lambda expression.
     - It is invoked automatically as soon as the TimeWindow is finished OR the collection list is full. 
     - The returned list must have a correspondence in elements with the parameters list, this means that the value of position 0 of the returned list must be the one corresponding to parameter in position 0 of the param list and so on...
+    - By default, duplicated parameters by [hashCode](https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#hashCode--) and [equals](https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html#equals-java.lang.Object-) are removed from the parameters list automatically. This is very convenient in most cases although there is a way for having all parameters (including duplicates) if it is required (See Advanced Usage)
 	
-  Let's define a DelayedBatchExecutor to receive an Integer value as parameter and return a String, and having a time window = 50 milliseconds, a max size = 20 elements and having the batchCallback defined as method reference: 
+  Now, Let's define a DelayedBatchExecutor to receive an Integer value as parameter and return a String, and having a time window = 50 milliseconds, a max size = 20 elements and having the batchCallback defined as method reference: 
   
   ```java
 DelayedBatchExecutor2<String,Integer> dbe = DelayedBatchExecutor2.create(Duration.ofMillis(50), 20, this::myBatchCallBack);
@@ -96,7 +97,7 @@ String result = dbe.execute(param); // all the threads executing this code withi
 }
 ```
 NOTE:
-- To create DelayedBatchExecutor for more than one parameter see Foot Note 1
+- To create DelayedBatchExecutor for more than one parameter see FootNote 1
 - In the example below, the thread is stopped when the execute(...) method is executed until the result is available (blocking behaviour). This is one of the three execution policies of the DelayedBatchExecutor
 
 
@@ -163,6 +164,8 @@ There are two parameters of a DelayedBatchExecutor that must be known to get the
 
 - bufferQueueSize: it is the max size of the internal list, by default its value is 8192
 
+- removeDuplicates: if true, then DelayedBatchExecutor will removed all duplicated parameters from the parameters list before invoking the batchCallback. By default its value is true.
+
 These parameters can be set by using the following constructor:
 
 ```java
@@ -170,12 +173,14 @@ These parameters can be set by using the following constructor:
 int maxSize=20;
 ExecutorService executorService= Executors.newFixedThreadPool(10);
 int bufferQueueSize= 16384;
+boolean removeDuplicates = false;
   
 DelayedBatchExecutor2<Integer,String> dbe = DelayedBatchExecutor2.create(
     Duration.ofMillis(200), 
     maxSize,
     executorService,
     bufferQueueSize,
+    removeDuplicates,
     this::myBatchCallBack);
 ```
  At any time, the configuration paramaters can be updated by using this thread safe method
@@ -187,11 +192,12 @@ dbe.updateConfig(
     maxSize,
     executorService,
     bufferQueueSize,
+    removeDuplicates,
     this::myBatchCallBack);
  ```
 
 -----
-Foot Note 1:  The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
+-Foot Note 1:  The example shows a DelayedBatchExecutor for a parameter of type Integer and a return type of String, hence DelayedBatchExecutor2<String,Integer>
 
 For a DelayedBatchExecutor for two parameters (say Integer and Date) and a returning type String, the definition would be:
 DelayedBatchExecutor3<String,Integer,Date> and so on...
