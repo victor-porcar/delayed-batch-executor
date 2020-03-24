@@ -17,22 +17,22 @@ class TupleListDuplicatedFinder {
         duplicatedMapIndex = new HashMap<>();
         tupleListUnique = new ArrayList<>();
 
-        for (int i = 0; i< allTupleList.size(); i++) {
-            Tuple tuple = allTupleList.get(i);
+        for (int index = 0; index< allTupleList.size(); index++) {
+            Tuple tuple = allTupleList.get(index);
             int tupleHashCode = tuple.hashCode();
             List<Integer> listOfIndexesMatchingHashCode = hashCodeByTuplesIndexInList.get(tupleHashCode);
 
             if (listOfIndexesMatchingHashCode==null)  {
                 List<Integer> listOfIndexes = new ArrayList<>();
-                listOfIndexes.add(i);
+                listOfIndexes.add(index);
                 hashCodeByTuplesIndexInList.put(tupleHashCode, listOfIndexes);
                 tupleListUnique.add(tuple);
             } else {
-                Integer matchingIndex = listOfIndexesMatchingHashCode.stream().filter(index -> tuple.equals(allTupleList.get(index))).findAny().orElse(null);
+                Integer matchingIndex = listOfIndexesMatchingHashCode.stream().filter(indexInList -> tuple.equals(allTupleList.get(indexInList))).findAny().orElse(null);
                 if (matchingIndex!=null) {
-                    duplicatedMapIndex.put(i,matchingIndex);
+                    duplicatedMapIndex.put(index,matchingIndex);
                 } else {
-                    listOfIndexesMatchingHashCode.add(i);
+                    listOfIndexesMatchingHashCode.add(index);
                     tupleListUnique.add(tuple);
                 }
             }
