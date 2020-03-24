@@ -10,7 +10,7 @@
 
 ## Rationale behind of DelayeBatchExecutor
 
-There are several scenarios in which concurrent threads execute many times the same query many (with different parameters) to a database at almost the same time. 
+There are several scenarios in which concurrent threads execute many times the same query (with different parameters) to a database at almost the same time. 
 
 For example, a REST endpoint serving tens or hundreds requests per second in which each one requires to retrieve a row from table by a different Id.
 
