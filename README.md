@@ -1,12 +1,12 @@
 
  ## Introduction
  
- I described in my post [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) a simple mechanism called DelayedBatchExecutor  to decrease the number of required queries in multithreaded applications by batching them. 
+ I described in my post [Optimizing Data Repositories Usage in Java Multi-Threaded Applications](https://dzone.com/articles/optimizing-data-repositories-usage-in-java-multith) a mechanism based on a [bufferedTimeout Flux](https://projectreactor.io/docs/core/release/api/reactor/core/publisher/Flux.html#bufferTimeout-int-java.time.Duration-) of the [Reactor Framework](https://projectreactor.io/) that allowed to decrease the number of required queries in multithreaded applications by batching them. 
  
- While this mechanism works well, it does need to block the threads for a interval of time, which is not optimal in some cases. I have released a new version of DelayedBatchExecutor that includes non-blocking behaviour in two ways:
+ While this mechanism that I called DelayedBatchExecutor worked well, it required to block the threads for a interval of time, which was not optimal in some cases. Now, I have released a new version that includes non-blocking behaviour in two ways:
 
 - using [Futures](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html)
-- using Reactive programming (Reactor framework)
+- using Reactive programming ([Reactor Framework](https://projectreactor.io/))
 
 ## Rationale behind of DelayeBatchExecutor
 
