@@ -155,14 +155,14 @@ The following diagram depicts how Reactive policy works:
 
 ### Advanced Usage
 
-There are two parameters of a DelayedBatchExecutor that must be known to get the most of it:
+There are three parameters of a DelayedBatchExecutor that must be known to get the most of it:
 
 - ExecutorService: the callback method is actually executed in a parallel thread, which is provided by an java.util.concurrent.ExecutorService. By default this Executor is `Executors.newFixedThreadPool(4)`.
  NOTE: the execution of the callback of a DelayedBatchExecutor does not prevent it to open a new time window if required as long as there are threads availables from the ExecutorService.
 
 - bufferQueueSize: it is the max size of the internal list, by default its value is 8192
 
-- removeDuplicates: if true, then DelayedBatchExecutor will removed all duplicated parameters from the parameters list before invoking the batchCallback. By default its value is true.
+- removeDuplicates: if false, then DelayedBatchExecutor won't removed all duplicated parameters from the parameters list before invoking the batchCallback. By default its value is true.
 
 These parameters can be set by using the following constructor:
 
