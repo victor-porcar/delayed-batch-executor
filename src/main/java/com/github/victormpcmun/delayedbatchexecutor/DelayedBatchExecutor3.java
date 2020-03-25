@@ -20,23 +20,23 @@ import java.util.concurrent.Future;
  * public void usingDelayedBatchExecutor(Integer param1, Integer param2) {
  *
  *    // using blocking behaviour
- *    String stringResult = dbe.execute(param1, param2); // the thread will be blocked until the result is available
- *    // compute with stringResult
+ *    String stringResult1 = dbe.execute(param1, param2); // the thread will be blocked until the result is available
+ *    // compute with stringResult1
  *
  *
  *    // using Future
  *    Future<String> resultAsFutureString = dbe.executeAsFuture(param1, param2); // the thread will not  be blocked
  *    // compute something else
- *    String stringResult = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
- *    // compute with stringResult
+ *    String stringResult2 = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
+ *    // compute with stringResult2
  *
  *
  *    // using Mono
- *    Mono<String> stringResult = dbe.executeAsMono(param1, param2); // the thread will not  be blocked
+ *    Mono<String> monoResult = dbe.executeAsMono(param1, param2); // the thread will not  be blocked
  *    // compute something else
- *    monoResult.subscribe(stringResult -> {
+ *    monoResult.subscribe(stringResult3 -> {
  *     // compute with stringResult
- *    }
+ *    });
  * }
  *
  * ...
@@ -51,7 +51,6 @@ import java.util.concurrent.Future;
  * @author Victor Porcar
  *
  */
-
 public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
 
     /**
@@ -61,7 +60,7 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      * <pre>
      * <b>Lambda expression</b>
      * {@code
-     * DelayedBatchExecutor3<String,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
+     * DelayedBatchExecutor3<String,Integer,Integer> dbe = DelayedBatchExecutor3.create(Duration.ofMillis(50), 10, (arg1List, arg2List) ->
      * {
      *      //arg1List and arg2List are List<Integer>
      *      List<String> result = ...
@@ -91,12 +90,14 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
     private final BatchCallBack3<Z,A,B> batchCallBack;
 
     /**
-     * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A and B) and return type Z
+     * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A and B) and return type Z. Similar to {@link DelayedBatchExecutor3#create(Duration, int, ExecutorService, int, boolean, BatchCallBack3)}  defaulting to:
      * <br>
      * <br>
-     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_FIXED_THREAD_POOL_COUNTER}
+     * -executorService:  the one returned by static method  {@link #getDefaultExecutorService()}
      * <br>
-     * -It uses as a default bufferQueueSize value: {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_BUFFER_QUEUE_SIZE}
+     * -bufferQueueSize: the value of constant {@link #DEFAULT_BUFFER_QUEUE_SIZE}
+     * <br>
+     * -removeDuplicates:true
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
@@ -108,11 +109,9 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      *
      */
 
-
     public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> create(Duration duration, int size, BatchCallBack3<Z,A,B> batchCallback3) {
-        return new DelayedBatchExecutor3<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, batchCallback3);
+        return new DelayedBatchExecutor3<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback3);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A and B) and return type Z
@@ -123,20 +122,21 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
      * @param  duration  the time window, defined as {@link Duration }.
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
-     * @param  bufferQueueSize max size of the internal queue to buffer values.
+     * @param  bufferQueueSize max size of the internal queue to buffer values
+     * @param  removeDuplicates if true then duplicated arguments from execute*(...) methods are not passed to the batchCallBack (considering same {@link Object#hashCode()} and  being {@link Object#equals(Object)})
      * @param  batchCallback3 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack3})
      * @return  an instance of {@link DelayedBatchExecutor3}
      *
      */
 
-    public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack3<Z,A,B> batchCallback3) {
-        return new DelayedBatchExecutor3<>(duration, size, executorService, bufferQueueSize, batchCallback3);
+    public static <Z,A,B> DelayedBatchExecutor3<Z,A,B> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack3<Z,A,B> batchCallback3) {
+        return new DelayedBatchExecutor3<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback3);
     }
 
 
 
-    private DelayedBatchExecutor3(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack3<Z,A,B> batchCallBack) {
-        super(duration, size , executorService, bufferQueueSize);
+    private DelayedBatchExecutor3(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack3<Z,A,B> batchCallBack) {
+        super(duration, size , executorService, bufferQueueSize, removeDuplicates);
         this.batchCallBack = batchCallBack;
     }
 
@@ -215,7 +215,6 @@ public class DelayedBatchExecutor3<Z,A,B> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {

@@ -39,7 +39,6 @@ class TupleMono<T> extends Tuple<T> {
             }
             counterIteration--;
         }
-
         if (monoSink == null) {
             throw new RuntimeException("MonoSink can not be set");
         }

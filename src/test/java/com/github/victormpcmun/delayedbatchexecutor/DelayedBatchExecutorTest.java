@@ -20,8 +20,8 @@ public class DelayedBatchExecutorTest {
 
     private final static int CONCURRENT_THREADS=10;
 
-    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
-    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 3000;
+    private final static int MIN_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 0;
+    private final static int MAX_MILLISECONDS_SIMULATION_DELAY_CALLBACK = 2000;
 
     private final static Duration DBE_DURATION = Duration.ofMillis(50);
     private final static Integer DBE_MAX_SIZE = 4;
@@ -244,7 +244,7 @@ public class DelayedBatchExecutorTest {
         int bufferQueueSize=40000;
         Duration duration=Duration.ofSeconds(2);
         int maxSize=30000;
-        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(duration, maxSize,  Executors.newFixedThreadPool(fixedThreadPoolSize), bufferQueueSize, integerList ->
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(duration, maxSize,  Executors.newFixedThreadPool(fixedThreadPoolSize), bufferQueueSize, true, integerList ->
         {
             List<String> stringListSimulatedResult = integerList.stream().map(value -> new String(PREFIX+value)).collect(Collectors.toList());
             log.info("BatchCallback.  Received {} args => {}. Returned {}. ", integerList.size(), integerList, stringListSimulatedResult );
@@ -386,6 +386,127 @@ public class DelayedBatchExecutorTest {
         List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
         waitUntilFinishing(threadsAsFutures);
     }
+
+
+
+
+
+    @Test
+    public void duplicatedRemovedTest() {
+        DelayedBatchExecutor2<String, String> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, 500,
+                DelayedBatchExecutor3.getDefaultExecutorService(),
+                DelayedBatchExecutor3.DEFAULT_BUFFER_QUEUE_SIZE,true,  listString ->
+                {
+                    log.info("list size {}. Content => {} ", listString.size(), listString);
+                    List<String> resultList = new ArrayList<>();
+                    for (int i=0; i<listString.size(); i++) {
+                        String arg1 = listString.get(i);
+                        resultList.add(arg1);
+                    }
+                    List <String> listWithoutDuplicates = resultList.stream().distinct().collect(Collectors.toList());
+                    if (resultList.size()!=listWithoutDuplicates.size()) {
+                        throw new RuntimeException("WATCH OUT THERE ARE DUPLICATES");
+                    }
+                    return resultList;
+                });
+
+        Callable<Void> callable = () -> {
+
+            for (int i=1; i<=100; i++) {
+
+                Integer randomInteger = getRandomIntegerFromInterval(1, 5);
+                String param = null;
+
+                if (randomInteger == 1) {
+                    param = "0-42L"; // same hashcode than "0-43-"
+                } else if (randomInteger == 2) {
+                    param = "0-43-";
+                } else if (randomInteger == 3) {
+                    param = "PP";
+                } else {
+                    param="KK" +randomInteger;
+                }
+                String expectedResult = param;
+
+                String result = dbe2.execute(param); // it will block until the result is available
+                //log.info("blockingTest=>After invoking execute. Expected returned Value {}. Actual returned value {}", param, result);
+                Assert.assertEquals(result, expectedResult);
+            }
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(1000, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void nullInResponseTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            return null;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,1000);
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            Assert.assertNull(result);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void nullInSomePositionsInResultTest() {
+        DelayedBatchExecutor2<String, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            List<String> resultList = new ArrayList<>();
+            for (int i=0; i<listOfIntegers.size();i++) {
+                if (listOfIntegers.get(i)==2) {
+                    resultList.add(null);
+                } else {
+                    resultList.add(PREFIX+listOfIntegers.get(i));
+                }
+            }
+            return resultList;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,3);
+            String result = dbe2.execute(randomInteger); // it will block until the result is available
+            if (randomInteger==2) {
+                Assert.assertNull(result);
+            } else {
+                Assert.assertEquals(result,  PREFIX+randomInteger);
+            }
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
+
+
+
+    //--------------------------------------------------------------------------------------------------------------------------
+    @Test
+    public void voidTest() {
+        DelayedBatchExecutor2<Void, Integer> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, DBE_MAX_SIZE, listOfIntegers -> {
+            log.info("received: {}", listOfIntegers);
+            return null;
+        });
+        Callable<Void> callable = () -> {
+            Integer randomInteger = getRandomIntegerFromInterval(1,100);
+            Future<Void> result = dbe2.executeAsFuture(randomInteger);
+
+            sleepCurrentThread(500);
+            return null;
+        };
+        List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
+        waitUntilFinishing(threadsAsFutures);
+    }
+
 
     //-----------------------------------------------------------------------------------------------------------------------
     //-----------------------------------------------------------------------------------------------------------------------

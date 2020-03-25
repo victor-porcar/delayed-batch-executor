@@ -17,7 +17,6 @@ class TupleListTransposer {
         return listOfListsOfArgs;
     }
 
-
     private static List<List<Object>> buildEmptyListOfListsOfArgs(int argsCounter) {
         List<List<Object>> listOfListsOfArgs = new ArrayList<>();
 

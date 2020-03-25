@@ -14,30 +14,30 @@ import java.util.concurrent.Future;
  * <br>
  * <pre>
  * {@code
- * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallback);
+ * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallback);
  *
  * ...
  *
  * public void usingDelayedBatchExecutor(Integer param1, Integer param2, Integer param3, Integer param4,Integer param5,Integer param6) {
  *
  *    // using blocking behaviour
- *    String stringResult = dbe.execute(param1, param2, param3, param4, param5, param6); // the thread will be blocked until the result is available
- *    // compute with stringResult
+ *    String stringResult1 = dbe.execute(param1, param2, param3, param4, param5, param6); // the thread will be blocked until the result is available
+ *    // compute with stringResult1
  *
  *
  *    // using Future
  *    Future<String> resultAsFutureString = dbe.executeAsFuture(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
  *    // compute something else
- *    String stringResult = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
- *    // compute with stringResult
+ *    String stringResult2 = resultAsFutureString.get();  // Blocks the thread if necessary for the computation to complete, and then retrieves its result.
+ *    // compute with stringResult2
  *
  *
  *    // using Mono
- *    Mono<String> stringResult = dbe.executeAsMono(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
+ *    Mono<String> monoResult = dbe.executeAsMono(param1, param2, param3, param4, param5, param6); // the thread will not  be blocked
  *    // compute something else
- *    monoResult.subscribe(stringResult -> {
- *     // compute with stringResult
- *    }
+ *    monoResult.subscribe(stringResult3 -> {
+ *     // compute with stringResult3
+ *    });
  * }
  *
  * ...
@@ -55,7 +55,6 @@ import java.util.concurrent.Future;
 
 public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
 
-
     /**
      * Receive as argument six Lists of type A,B,C,D,E,F and returns a List of type Z. It can be implemented as a lambda expression or method reference
      * <br>
@@ -63,7 +62,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      * <pre>
      * <b>Lambda expression</b>
      * {@code
-     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, (arg1List, arg2List, arg3list, arg4List, arg5List, arg6List) ->
+     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, (arg1List, arg2List, arg3list, arg4List, arg5List, arg6List) ->
      * {
      *      //arg1List,arg2List,arg3List,arg4List, arg5List and arg6List are List<Integer>
      *      List<String> result = ...
@@ -73,7 +72,7 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      *}
      * <b>Method reference</b>
      * {@code
-     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
+     * DelayedBatchExecutor7<String,Integer,Integer,Integer,Integer,Integer,Integer> dbe = DelayedBatchExecutor7.create(Duration.ofMillis(50), 10, this::myBatchCallBack);
      * ...
      * List<String> myBatchCallBack(List<Integer> arg1List, List<Integer> arg2List, List<Integer> arg3List, List<Integer> arg4List, List<Integer> arg5List, List<Integer> arg6List) {
      *      List<String> result = ...
@@ -93,12 +92,14 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
     private final BatchCallBack7<Z,A,B,C,D,E,F> batchCallBack;
 
     /**
-     * Factory method to create an instance of a Delayed Batch Executor for six arguments (of types A,B,C,D,E,F) and return type Z
+     * Factory method to create an instance of a Delayed Batch Executor for six arguments (of types A,B,C,D,E,F) and return type Z. Similar to {@link DelayedBatchExecutor7#create(Duration, int, ExecutorService, int, boolean, BatchCallBack7)}  defaulting to:
      * <br>
      * <br>
-     * -It uses as a default ExecutorService:  {@link java.util.concurrent.Executors#newFixedThreadPool(int)} with the following number of threads: {@value DelayedBatchExecutor#DEFAULT_FIXED_THREAD_POOL_COUNTER}
+     * -executorService:  the one returned by static method  {@link #getDefaultExecutorService()}
      * <br>
-     * -It uses as a default bufferQueueSize value: {@value DelayedBatchExecutor#DEFAULT_BUFFER_QUEUE_SIZE}
+     * -bufferQueueSize: the value of constant {@link #DEFAULT_BUFFER_QUEUE_SIZE}
+     * <br>
+     * -removeDuplicates:true
      * <br>
      * @param  <Z>  the return type
      * @param  <A>  the type of the first argument
@@ -114,11 +115,9 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      *
      */
 
-
     public static <Z,A,B,C,D,E,F> DelayedBatchExecutor7<Z,A,B,C,D,E,F> create(Duration duration, int size, BatchCallBack7<Z,A,B,C,D,E,F> batchCallback7) {
-        return new DelayedBatchExecutor7<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, batchCallback7);
+        return new DelayedBatchExecutor7<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback7);
     }
-
 
     /**
      * Factory method to create an instance of a Delayed Batch Executor for two arguments (of types A,B,C,D and E) and return type Z
@@ -134,19 +133,18 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
      * @param  size the max collected size.  As soon as  the count of collected parameters reaches this size, the batchCallBack method is executed
      * @param  executorService to define the pool of threads to executed the batchCallBack method in asynchronous mode
      * @param  bufferQueueSize max size of the internal queue to buffer values.
+     * @param  removeDuplicates if true then duplicated arguments from execute*(...) methods are not passed to the batchCallBack (considering same {@link Object#hashCode()} and  being {@link Object#equals(Object)})
      * @param  batchCallback7 the method reference or lambda expression that receives a list of type A and returns a list of Type Z (see {@link BatchCallBack7})
      * @return  an instance of {@link DelayedBatchExecutor7}
      *
      */
 
-    public static <Z,A,B,C,D,E,F> DelayedBatchExecutor7<Z,A,B,C,D,E,F> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack7<Z,A,B,C,D,E,F> batchCallback7) {
-        return new DelayedBatchExecutor7<>(duration, size, executorService, bufferQueueSize, batchCallback7);
+    public static <Z,A,B,C,D,E,F> DelayedBatchExecutor7<Z,A,B,C,D,E,F> create(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack7<Z,A,B,C,D,E,F> batchCallback7) {
+        return new DelayedBatchExecutor7<>(duration, size, executorService, bufferQueueSize, removeDuplicates, batchCallback7);
     }
 
-
-
-    private DelayedBatchExecutor7(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, BatchCallBack7<Z,A,B,C,D,E,F> batchCallBack) {
-        super(duration, size , executorService, bufferQueueSize);
+    private DelayedBatchExecutor7(Duration duration, int size, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates, BatchCallBack7<Z,A,B,C,D,E,F> batchCallBack) {
+        super(duration, size , executorService, bufferQueueSize, removeDuplicates);
         this.batchCallBack = batchCallBack;
     }
 
@@ -237,7 +235,6 @@ public class DelayedBatchExecutor7<Z,A,B,C,D,E,F> extends DelayedBatchExecutor {
         Mono<Z> mono = tupleMono.getMono();
         return mono;
     }
-
 
     @Override
     protected  List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {
