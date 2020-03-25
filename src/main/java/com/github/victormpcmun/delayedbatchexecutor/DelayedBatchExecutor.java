@@ -170,7 +170,19 @@ abstract class DelayedBatchExecutor {
      */
 
     public static ExecutorService getDefaultExecutorService() {
-        return Executors.newFixedThreadPool(DEFAULT_FIXED_THREAD_POOL_COUNTER);
+        return getDefaultExecutorService(DEFAULT_FIXED_THREAD_POOL_COUNTER);
+    }
+
+
+    /**
+     *  static method that creates the default Executor Service, which is a  {@link java.util.concurrent.Executors#newFixedThreadPool(int)}
+     *  with the  given number of threads
+     * @param threads number of threads of the FixedThreadPool
+     * @return the default Executor Service
+     */
+
+    public static ExecutorService getDefaultExecutorService(int threads) {
+        return Executors.newFixedThreadPool(threads);
     }
 
     @Override
