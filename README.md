@@ -1,4 +1,8 @@
 
+## LATEST VERSION
+
+https://search.maven.org/artifact/com.github.victormpcmun/delayed-batch-executor
+
 ## Rationale behind of DelayeBatchExecutor
 
 There are several scenarios in which concurrent threads execute many times the same query (with different parameters) to a database at almost the same time. 
