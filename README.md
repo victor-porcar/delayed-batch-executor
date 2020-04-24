@@ -1,4 +1,9 @@
 
+## ARTICLE IN DZONE
+
+https://dzone.com/articles/delayedbatchexecutor-how-to-optimize-database-usag
+
+
 ## LATEST VERSION
 
 https://search.maven.org/artifact/com.github.victormpcmun/delayed-batch-executor
