@@ -5,6 +5,7 @@ import reactor.core.publisher.UnicastProcessor;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 abstract class DelayedBatchExecutor {
@@ -26,6 +27,10 @@ abstract class DelayedBatchExecutor {
      */
     public static final int DEFAULT_FIXED_THREAD_POOL_COUNTER = 4;
 
+    /**
+     * {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_FIXED_THREAD_NAME_PREFIX}
+     */
+    public static final String DEFAULT_FIXED_THREAD_NAME_PREFIX = "delayed-batch-executor-";
 
     /**
      * {@value com.github.victormpcmun.delayedbatchexecutor.DelayedBatchExecutor#DEFAULT_BUFFER_QUEUE_SIZE}
@@ -182,7 +187,13 @@ abstract class DelayedBatchExecutor {
      */
 
     public static ExecutorService getDefaultExecutorService(int threads) {
-        return Executors.newFixedThreadPool(threads);
+        return Executors.newFixedThreadPool(threads, new ThreadFactory() {
+            private final AtomicInteger threadNumber = new AtomicInteger(1);
+            @Override
+            public Thread newThread(Runnable runnable) {
+                return new Thread(runnable, DEFAULT_FIXED_THREAD_NAME_PREFIX + threadNumber.getAndIncrement());
+            }
+        });
     }
 
     @Override
