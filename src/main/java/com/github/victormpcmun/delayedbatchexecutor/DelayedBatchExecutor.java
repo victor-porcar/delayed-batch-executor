@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-abstract class DelayedBatchExecutor {
+abstract class DelayedBatchExecutor implements AutoCloseable {
 
     private static final String TO_STRING_FORMAT="DelayedBatchExecutor {invocationsCounter=%d, callBackExecutionsCounter=%d, duration=%d, size=%d, bufferQueueSize=%d}";
 
@@ -47,8 +47,15 @@ abstract class DelayedBatchExecutor {
 	private UnicastProcessor<Tuple> source;
 	private boolean removeDuplicates;
 
+	private final boolean defaultExecutorServiceCreated;
+
     protected DelayedBatchExecutor(Duration duration, int maxSize, ExecutorService executorService, int bufferQueueSize, boolean removeDuplicates) {
-        super();
+        if (executorService == null) {
+            executorService = getDefaultExecutorService();
+            defaultExecutorServiceCreated = true;
+        } else {
+            defaultExecutorServiceCreated = false;
+        }
         boolean configurationSuccessful = updateConfig(duration, maxSize, executorService, bufferQueueSize, removeDuplicates);
         if (!configurationSuccessful) {
             throw new RuntimeException("Illegal configuration parameters");
@@ -174,7 +181,7 @@ abstract class DelayedBatchExecutor {
      * @return the default Executor Service
      */
 
-    public static ExecutorService getDefaultExecutorService() {
+    protected ExecutorService getDefaultExecutorService() {
         return getDefaultExecutorService(DEFAULT_FIXED_THREAD_POOL_COUNTER);
     }
 
@@ -186,7 +193,7 @@ abstract class DelayedBatchExecutor {
      * @return the default Executor Service
      */
 
-    public static ExecutorService getDefaultExecutorService(int threads) {
+    private ExecutorService getDefaultExecutorService(int threads) {
         return Executors.newFixedThreadPool(threads, new ThreadFactory() {
             private final AtomicInteger threadNumber = new AtomicInteger(1);
             @Override
@@ -194,6 +201,13 @@ abstract class DelayedBatchExecutor {
                 return new Thread(runnable, DEFAULT_FIXED_THREAD_NAME_PREFIX + threadNumber.getAndIncrement());
             }
         });
+    }
+
+    @Override
+    public void close() {
+        if (defaultExecutorServiceCreated && !executorService.isShutdown()) {
+            executorService.shutdown();
+        }
     }
 
     @Override

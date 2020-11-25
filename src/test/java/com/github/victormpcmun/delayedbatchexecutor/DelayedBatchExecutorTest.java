@@ -394,7 +394,7 @@ public class DelayedBatchExecutorTest {
     @Test
     public void duplicatedRemovedTest() {
         DelayedBatchExecutor2<String, String> dbe2 = DelayedBatchExecutor2.create(DBE_DURATION, 500,
-                DelayedBatchExecutor3.getDefaultExecutorService(),
+                null,
                 DelayedBatchExecutor3.DEFAULT_BUFFER_QUEUE_SIZE,true,  listString ->
                 {
                     log.info("list size {}. Content => {} ", listString.size(), listString);
