@@ -112,7 +112,7 @@ public class DelayedBatchExecutor4<Z,A,B,C> extends DelayedBatchExecutor {
      *
      */
     public static <Z,A,B,C> DelayedBatchExecutor4<Z,A,B,C> create(Duration duration, int size, BatchCallBack4<Z,A,B,C> batchCallback4) {
-        return new DelayedBatchExecutor4<>(duration, size, getDefaultExecutorService(), DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback4);
+        return new DelayedBatchExecutor4<>(duration, size, null, DEFAULT_BUFFER_QUEUE_SIZE, true, batchCallback4);
     }
 
 
