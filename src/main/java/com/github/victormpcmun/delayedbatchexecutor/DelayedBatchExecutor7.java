@@ -54,7 +54,7 @@ import java.util.concurrent.Future;
  *
  */
 
-public class DelayedBatchExecutor7<Z, A, B, C, D, E, F> extends DelayedBatchExecutor {
+public class DelayedBatchExecutor7<Z, A, B, C, D, E, F> extends DelayedBatchExecutor<Z> {
 
 	/**
 	 * Receive as argument six Lists of type A,B,C,D,E,F and returns a List of type
@@ -289,12 +289,11 @@ public class DelayedBatchExecutor7<Z, A, B, C, D, E, F> extends DelayedBatchExec
 		return mono;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	protected List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {
-		List<Object> resultList = (List<Object>) batchCallBack.apply((List<A>) transposedTupleList.get(0),
-				(List<B>) transposedTupleList.get(1), (List<C>) transposedTupleList.get(2),
-				(List<D>) transposedTupleList.get(3), (List<E>) transposedTupleList.get(4),
-				(List<F>) transposedTupleList.get(5));
-		return resultList;
+	protected List<Z> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList) {
+		return batchCallBack.apply((List<A>) transposedTupleList.get(0), (List<B>) transposedTupleList.get(1),
+				(List<C>) transposedTupleList.get(2), (List<D>) transposedTupleList.get(3),
+				(List<E>) transposedTupleList.get(4), (List<F>) transposedTupleList.get(5));
 	}
 }

@@ -5,20 +5,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class TupleListDuplicatedFinder {
+class TupleListDuplicatedFinder<T> {
 
-	private List<Tuple> allTupleList;
-	private List<Tuple> tupleListUnique;
+	private List<Tuple<T>> allTupleList;
+	private List<Tuple<T>> tupleListUnique;
 	private Map<Integer, Integer> duplicatedMapIndex;
 	Map<Integer, List<Integer>> hashCodeByTuplesIndexInList = new HashMap<>();
 
-	TupleListDuplicatedFinder(List<Tuple> allTupleList) {
+	TupleListDuplicatedFinder(List<Tuple<T>> allTupleList) {
 		this.allTupleList = allTupleList;
 		duplicatedMapIndex = new HashMap<>();
 		tupleListUnique = new ArrayList<>();
 
 		for (int index = 0; index < allTupleList.size(); index++) {
-			Tuple tuple = allTupleList.get(index);
+			Tuple<T> tuple = allTupleList.get(index);
 			int tupleHashCode = tuple.hashCode();
 			List<Integer> listOfIndexesMatchingHashCode = hashCodeByTuplesIndexInList.get(tupleHashCode);
 
@@ -41,11 +41,11 @@ class TupleListDuplicatedFinder {
 		}
 	}
 
-	List<Tuple> getAllTupleList() {
+	List<Tuple<T>> getAllTupleList() {
 		return allTupleList;
 	}
 
-	List<Tuple> getTupleListUnique() {
+	List<Tuple<T>> getTupleListUnique() {
 		return tupleListUnique;
 	}
 
