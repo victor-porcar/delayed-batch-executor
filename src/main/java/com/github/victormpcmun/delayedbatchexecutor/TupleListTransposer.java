@@ -5,10 +5,10 @@ import java.util.List;
 
 class TupleListTransposer {
 
-	static List<List<Object>> transposeValuesAsListOfList(List<Tuple> paramList) {
+	static <T> List<List<Object>> transposeValuesAsListOfList(List<Tuple<T>> paramList) {
 		int argsCounter = paramList.get(0).getArgsSize();
 		List<List<Object>> listOfListsOfArgs = buildEmptyListOfListsOfArgs(argsCounter);
-		for (Tuple tuple : paramList) {
+		for (Tuple<?> tuple : paramList) {
 			for (int argPosition = 0; argPosition < argsCounter; argPosition++) {
 				Object object = tuple.getArgumentByPosition(argPosition);
 				listOfListsOfArgs.get(argPosition).add(object);

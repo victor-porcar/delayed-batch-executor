@@ -128,6 +128,7 @@ public class DelayedBatchExecutorTest {
 		Callable<Void> callable = () -> {
 			try {
 				String result = dbe2LaunchingException.execute(1);
+				Assert.assertNotNull(result);
 			} catch (NullPointerException e) {
 				log.info("blockingExceptionTest=>It is capturing successfully the exception");
 				throw e; // for the purpose of this test, the exception will be rethrown in method
@@ -182,6 +183,7 @@ public class DelayedBatchExecutorTest {
 				}
 				throw actualRuntimeLaunched;
 			}
+			Assert.assertNotNull(result);
 			return null;
 		};
 		List<Future<Void>> threadsAsFutures = createAndStartThreadsForCallable(CONCURRENT_THREADS, callable);
@@ -526,7 +528,7 @@ public class DelayedBatchExecutorTest {
 				});
 		Callable<Void> callable = () -> {
 			Integer randomInteger = getRandomIntegerFromInterval(1, 100);
-			Future<Void> result = dbe2.executeAsFuture(randomInteger);
+			dbe2.executeAsFuture(randomInteger);
 
 			sleepCurrentThread(500);
 			return null;
@@ -539,7 +541,7 @@ public class DelayedBatchExecutorTest {
 	// -----------------------------------------------------------------------------------------------------------------------
 
 	private void waitUntilFinishing(List<Future<Void>> threads) {
-		for (Future future : threads) {
+		for (Future<Void> future : threads) {
 			try {
 				future.get();
 			} catch (InterruptedException e) {
@@ -550,7 +552,7 @@ public class DelayedBatchExecutorTest {
 		}
 	}
 
-	private List<Future<Void>> createAndStartThreadsForCallable(int threadsCount, Callable callable) {
+	private List<Future<Void>> createAndStartThreadsForCallable(int threadsCount, Callable<Void> callable) {
 		ExecutorService es = Executors.newFixedThreadPool(threadsCount);
 		List<Future<Void>> threads = new ArrayList<>();
 		for (int threadCounter = 0; threadCounter < threadsCount; threadCounter++) {

@@ -9,7 +9,6 @@ abstract class Tuple<T> {
 	private int hashCode;
 
 	Tuple(Object... argsAsArray) {
-		super();
 		this.result = null;
 		this.argsAsArray = argsAsArray;
 		this.hashCode = Arrays.hashCode(argsAsArray);
@@ -53,13 +52,16 @@ abstract class Tuple<T> {
 
 	@Override
 	public boolean equals(Object o) {
-		// o will never null
+		if (o == this)
+			return true;
+		if (!(o instanceof Tuple))
+			return false;
 		Tuple<?> tuple = (Tuple<?>) o;
 		return Arrays.equals(argsAsArray, tuple.argsAsArray);
 	}
 
 	@Override
 	public int hashCode() {
-		return Arrays.hashCode(argsAsArray);
+		return hashCode;
 	}
 }

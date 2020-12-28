@@ -1,14 +1,22 @@
 package com.github.victormpcmun.delayedbatchexecutor;
 
-import reactor.core.publisher.UnicastProcessor;
-
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-abstract class DelayedBatchExecutor implements AutoCloseable {
+import reactor.core.publisher.UnicastProcessor;
+
+abstract class DelayedBatchExecutor<Z> implements AutoCloseable {
 
 	private static final String TO_STRING_FORMAT = "DelayedBatchExecutor {invocationsCounter=%d, callBackExecutionsCounter=%d, duration=%d, size=%d, bufferQueueSize=%d}";
 
@@ -44,7 +52,7 @@ abstract class DelayedBatchExecutor implements AutoCloseable {
 	private int maxSize;
 	private ExecutorService executorService;
 	private int bufferQueueSize;
-	private UnicastProcessor<Tuple> source;
+	private UnicastProcessor<Tuple<Z>> source;
 	private boolean removeDuplicates;
 
 	private final boolean defaultExecutorServiceCreated;
@@ -243,16 +251,16 @@ abstract class DelayedBatchExecutor implements AutoCloseable {
 				duration.toMillis(), maxSize, bufferQueueSize);
 	}
 
-	protected <Z> void enlistTuple(Tuple<Z> param) {
+	protected void enlistTuple(Tuple<Z> param) {
 		invocationsCounter.incrementAndGet();
 		source.onNext(param);
 	}
 
-	protected abstract List<Object> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList);
+	protected abstract List<Z> getResultListFromBatchCallBack(List<List<Object>> transposedTupleList);
 
-	private void invokeBatchCallBackAndContinue(List<Tuple> tupleList) {
-		List<Object> rawResultList = null;
-		List<Object> resultFromCallBack;
+	private void invokeBatchCallBackAndContinue(List<Tuple<Z>> tupleList) {
+		List<Z> rawResultList = null;
+		List<Z> resultFromCallBack;
 		RuntimeException runtimeException = null;
 		try {
 			List<List<Object>> transposedTupleList = TupleListTransposer.transposeValuesAsListOfList(tupleList);
@@ -264,46 +272,46 @@ abstract class DelayedBatchExecutor implements AutoCloseable {
 		}
 
 		for (int indexTuple = 0; indexTuple < tupleList.size(); indexTuple++) {
-			Tuple tuple = tupleList.get(indexTuple);
+			Tuple<Z> tuple = tupleList.get(indexTuple);
 			tuple.setResult(resultFromCallBack.get(indexTuple));
 			tuple.setRuntimeException(runtimeException);
 			tuple.continueIfIsWaiting();
 		}
 	}
 
-	private void assignValuesToDuplicatesAndContinue(TupleListDuplicatedFinder tupleListDuplicatedFinder) {
+	private void assignValuesToDuplicatesAndContinue(TupleListDuplicatedFinder<Z> tupleListDuplicatedFinder) {
 		Map<Integer, Integer> duplicatedMapIndex = tupleListDuplicatedFinder.getDuplicatedMapIndex();
-		List<Tuple> allTupleList = tupleListDuplicatedFinder.getAllTupleList();
+		List<Tuple<Z>> allTupleList = tupleListDuplicatedFinder.getAllTupleList();
 		for (Integer duplicatedIndex : duplicatedMapIndex.keySet()) {
-			Tuple duplicatedTuple = allTupleList.get(duplicatedIndex);
-			Tuple uniqueTuple = allTupleList.get(duplicatedMapIndex.get(duplicatedIndex));
+			Tuple<Z> duplicatedTuple = allTupleList.get(duplicatedIndex);
+			Tuple<Z> uniqueTuple = allTupleList.get(duplicatedMapIndex.get(duplicatedIndex));
 			duplicatedTuple.copyResultAndRuntimeExceptionFromTuple(uniqueTuple);
 			duplicatedTuple.continueIfIsWaiting();
 		}
 	}
 
-	private void executeBatchCallBackRemovingDuplicates(List<Tuple> tupleList) {
+	private void executeBatchCallBackRemovingDuplicates(List<Tuple<Z>> tupleList) {
 		callBackExecutionsCounter.incrementAndGet();
 		CompletableFuture.runAsync(() -> {
-			TupleListDuplicatedFinder tupleListDuplicatedFinder = new TupleListDuplicatedFinder(tupleList);
-			List<Tuple> tupleListUnique = tupleListDuplicatedFinder.getTupleListUnique();
+			TupleListDuplicatedFinder<Z> tupleListDuplicatedFinder = new TupleListDuplicatedFinder<>(tupleList);
+			List<Tuple<Z>> tupleListUnique = tupleListDuplicatedFinder.getTupleListUnique();
 			invokeBatchCallBackAndContinue(tupleListUnique);
 			assignValuesToDuplicatesAndContinue(tupleListDuplicatedFinder);
 		}, this.executorService);
 	}
 
-	private void executeBatchCallBackNotRemovingDuplicates(List<Tuple> tupleList) {
+	private void executeBatchCallBackNotRemovingDuplicates(List<Tuple<Z>> tupleList) {
 		callBackExecutionsCounter.incrementAndGet();
 		CompletableFuture.runAsync(() -> {
 			invokeBatchCallBackAndContinue(tupleList);
 		}, this.executorService);
 	}
 
-	private UnicastProcessor<Tuple> createBufferedTimeoutUnicastProcessor(Duration duration, int maxSize,
+	private UnicastProcessor<Tuple<Z>> createBufferedTimeoutUnicastProcessor(Duration duration, int maxSize,
 			int bufferQueueSize, boolean removeDuplicates) {
-		Queue<Tuple> blockingQueue = new ArrayBlockingQueue<>(bufferQueueSize); // =>
-																				// https://github.com/reactor/reactor-core/issues/469#issuecomment-286040390
-		UnicastProcessor<Tuple> newSource = UnicastProcessor.create(blockingQueue);
+		Queue<Tuple<Z>> blockingQueue = new ArrayBlockingQueue<>(bufferQueueSize); // =>
+																					// https://github.com/reactor/reactor-core/issues/469#issuecomment-286040390
+		UnicastProcessor<Tuple<Z>> newSource = UnicastProcessor.create(blockingQueue);
 		if (removeDuplicates) {
 			newSource.publish().autoConnect().bufferTimeout(maxSize, duration)
 					.subscribe(this::executeBatchCallBackRemovingDuplicates);
@@ -336,11 +344,11 @@ abstract class DelayedBatchExecutor implements AutoCloseable {
 		return sameDuration && sameSize && sameExecutorService && sameBufferQueueSize;
 	}
 
-	private List<Object> resizeListFillingWithNullsIfNecessary(List<Object> list, int desiredSize) {
+	private <E> List<E> resizeListFillingWithNullsIfNecessary(List<E> list, int desiredSize) {
 		if (list == null) {
 			list = Collections.nCopies(desiredSize, null);
 		} else if (list.size() < desiredSize) {
-			list = new ArrayList(list); // make it mutable in case it isn't
+			list = new ArrayList<>(list); // make it mutable in case it isn't
 			list.addAll(Collections.nCopies(desiredSize - list.size(), null));
 		}
 		return list;

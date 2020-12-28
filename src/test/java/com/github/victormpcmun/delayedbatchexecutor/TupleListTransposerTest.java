@@ -15,7 +15,7 @@ public class TupleListTransposerTest {
 
 	@Test
 	public void tupleListTest() {
-		List<Tuple> tupleList = new ArrayList<>();
+		List<Tuple<Integer>> tupleList = new ArrayList<>();
 		Tuple<Integer> tuple1 = new TupleFuture<>(ARG11, ARG12);
 		Tuple<Integer> tuple2 = new TupleFuture<>(ARG21, ARG22);
 
